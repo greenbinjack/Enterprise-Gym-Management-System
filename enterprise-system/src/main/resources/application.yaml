@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: enterprise-system
+  datasource:
+    url: jdbc:postgresql://localhost:5433/gym_db
+    username: postgres
+    password: greenbinjack
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+  flyway:
+    enabled: true
+# ... (existing db config) ...
+
+sslcommerz:
+  store-id: enter699c50edb4223 # Get this from SSLCommerz Sandbox
+  store-password: enter699c50edb4223@ssl # Get this from SSLCommerz Sandbox
+  base-url: https://sandbox.sslcommerz.com # Use https://securepay.sslcommerz.com for production
+  success-url: http://localhost:8080/api/subscriptions/payment/success
+  fail-url: http://localhost:8080/api/subscriptions/payment/fail
+  cancel-url: http://localhost:8080/api/subscriptions/payment/cancel
