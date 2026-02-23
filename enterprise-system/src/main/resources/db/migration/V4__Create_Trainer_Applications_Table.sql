@@ -1,0 +1,11 @@
+CREATE TABLE trainer_applications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    specialties VARCHAR(255) NOT NULL,
+    cv_url VARCHAR(500) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING', -- PENDING, APPROVED, REJECTED
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

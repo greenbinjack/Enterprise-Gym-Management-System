@@ -4,6 +4,11 @@ import Register from './components/Register';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Plans from './components/Plans';
+import Careers from './components/Careers'; // ADD THIS
+import AdminDashboard from './components/AdminDashboard'; // ADD THIS
+import AdminLogin from './components/AdminLogin'; // ADD THIS IMPORT
+import TrainerActivation from './components/TrainerActivation';
+import TrainerDashboard from './components/TrainerDashboard';
 
 function App() {
   return (
@@ -15,6 +20,13 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/plans" element={<Plans />} />
+          <Route path="/careers" element={<Careers />} /> {/* Public */}
+          {/* Admin Routes */}
+          <Route path="/admin/login" element={<AdminLogin />} /> {/* Dedicated Admin Login */}
+          <Route path="/admin" element={<AdminDashboard />} />
+          {/* Trainer Routes */}
+          <Route path="/trainer/activate" element={<TrainerActivation />} />
+          <Route path="/trainer" element={<TrainerDashboard />} />
         </Routes>
       </div>
     </Router>

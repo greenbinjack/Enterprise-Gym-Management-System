@@ -24,7 +24,7 @@ public class RegistrationController {
         // DTO
 
         try {
-            User registeredUser = userService.registerNewMember(registrationDto);
+            User registeredUser = userService.registerUser(registrationDto);
             // Return a 201 Created status and a success message (or the user's ID)
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body("User registered successfully with ID: " + registeredUser.getId());
