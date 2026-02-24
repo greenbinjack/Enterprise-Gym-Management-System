@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import BackButton from './BackButton';
 
@@ -41,6 +41,10 @@ export default function Login() {
                         <input name="password" type="password" placeholder="Password" className={inputClass} onChange={handleChange} required />
                         <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Login</button>
                     </form>
+
+                    <div className="flex justify-between items-center mb-4">
+                        <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">Forgot your password?</Link>
+                    </div>
 
                     <div className="text-center mt-6 text-sm">
                         <Link to="/register" className="text-blue-600 hover:underline">Need an account? Register</Link>

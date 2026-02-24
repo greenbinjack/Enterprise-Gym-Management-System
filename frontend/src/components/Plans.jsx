@@ -41,17 +41,20 @@ export default function Plans() {
         setLoadingPlan(plan.id);
 
         try {
-            const response = await axios.post('http://localhost:8080/api/payment/initiate', {
+            // FIXED THE URL HERE to match your SubscriptionController!
+            const response = await axios.post('http://localhost:8080/api/subscriptions/initiate-payment', {
                 userId: user.id,
                 planId: plan.id,
                 amount: price,
-                planName: `${plan.name} (${billingCycle})`
+                planName: `${plan.name} (${billingCycle})`,
+                billingCycle: billingCycle
             });
 
             if (response.data?.gatewayUrl) {
                 window.location.href = response.data.gatewayUrl;
             }
         } catch (error) {
+            console.error(error); // Add this so you can see the exact error in the F12 console!
             alert("Payment setup failed. Please try again.");
             setIsLoading(false);
             setLoadingPlan(null);

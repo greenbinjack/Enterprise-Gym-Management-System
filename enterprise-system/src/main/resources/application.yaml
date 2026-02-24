@@ -19,7 +19,7 @@ spring:
     host: smtp.gmail.com
     port: 587
     username: karasuno.magnify@gmail.com
-    password: uhqa ctvd oxar dndc        # IMPORTANT: See note below!
+    password: ulcq fzng sbbt ucnk        # IMPORTANT: See note below!
     properties:
       mail:
         smtp:

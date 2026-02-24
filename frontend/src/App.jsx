@@ -9,6 +9,10 @@ import AdminDashboard from './components/AdminDashboard'; // ADD THIS
 import AdminLogin from './components/AdminLogin'; // ADD THIS IMPORT
 import TrainerActivation from './components/TrainerActivation';
 import TrainerDashboard from './components/TrainerDashboard';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
+
+// ... inside your <Routes> block add:
 
 function App() {
   return (
@@ -27,6 +31,9 @@ function App() {
           {/* Trainer Routes */}
           <Route path="/trainer/activate" element={<TrainerActivation />} />
           <Route path="/trainer" element={<TrainerDashboard />} />
+
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
       </div>
     </Router>
