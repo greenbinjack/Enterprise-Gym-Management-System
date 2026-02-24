@@ -4,6 +4,7 @@ import com.gym.enterprise_system.dto.ApplicationRequestDto;
 import com.gym.enterprise_system.dto.ApplicationResponseDto;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public interface TrainerRecruitmentService {
@@ -14,4 +15,8 @@ public interface TrainerRecruitmentService {
     void approveApplicant(UUID applicationId);
 
     void rejectApplicant(UUID applicationId);
+
+    Map<String, Object> getRecruitmentBoardData();
+
+    void moveApplicantToPending(UUID applicationId);
 }

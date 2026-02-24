@@ -57,4 +57,21 @@ public class RecruitmentController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    // NEW: Get all 4 columns for the Kanban Board
+    @GetMapping("/board")
+    public ResponseEntity<?> getRecruitmentBoard() {
+        return ResponseEntity.ok(recruitmentService.getRecruitmentBoardData());
+    }
+
+    // NEW: Move Rejected back to Pending
+    @PostMapping("/applications/{id}/pending")
+    public ResponseEntity<?> moveApplicationToPending(@PathVariable UUID id) {
+        try {
+            recruitmentService.moveApplicantToPending(id);
+            return ResponseEntity.ok(Map.of("message", "Application moved back to review."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

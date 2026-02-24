@@ -11,6 +11,13 @@ import TrainerActivation from './components/TrainerActivation';
 import TrainerDashboard from './components/TrainerDashboard';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
+import AdminScheduleBuilder from './components/AdminScheduleBuilder';
+import TrainerSchedule from './components/TrainerSchedule';
+import AdminLayout from './components/AdminLayout';
+import AdminFacilities from './components/AdminFacilities';
+import AdminUsers from './components/AdminUsers';
+import AdminRecruitmentBoard from './components/AdminRecruitmentBoard';
+import AdminInventory from './components/AdminInventory';
 
 // ... inside your <Routes> block add:
 
@@ -26,12 +33,24 @@ function App() {
           <Route path="/plans" element={<Plans />} />
           <Route path="/careers" element={<Careers />} /> {/* Public */}
           {/* Admin Routes */}
-          <Route path="/admin/login" element={<AdminLogin />} /> {/* Dedicated Admin Login */}
-          <Route path="/admin" element={<AdminDashboard />} />
+          {/* Public & Member Routes remain standard */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+
+          {/* The Unified Admin App */}
+          <Route element={<AdminLayout />}>
+            {/* All these pages will now render INSIDE the layout alongside the sidebar! */}
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/schedule-builder" element={<AdminScheduleBuilder />} />
+            <Route path="/admin/facilities" element={<AdminFacilities />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/recruitment" element={<AdminRecruitmentBoard />} />
+            <Route path="/admin/inventory" element={<AdminInventory />} />
+          </Route>
           {/* Trainer Routes */}
           <Route path="/trainer/activate" element={<TrainerActivation />} />
           <Route path="/trainer" element={<TrainerDashboard />} />
-
+          <Route path="/trainer/schedule" element={<TrainerSchedule />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>

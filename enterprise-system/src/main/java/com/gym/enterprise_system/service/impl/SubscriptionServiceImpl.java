@@ -1,20 +1,30 @@
 package com.gym.enterprise_system.service.impl;
 
-import com.gym.enterprise_system.dto.*;
-import com.gym.enterprise_system.entity.*;
-import com.gym.enterprise_system.repository.*;
-import com.gym.enterprise_system.service.SubscriptionService; // ADD IMPORT
-import lombok.RequiredArgsConstructor;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import com.gym.enterprise_system.dto.PaymentRequestDto;
+import com.gym.enterprise_system.dto.PlanResponseDto;
+import com.gym.enterprise_system.dto.SubscriptionStatusResponseDto;
+import com.gym.enterprise_system.entity.InvoicePayment;
+import com.gym.enterprise_system.entity.MembershipPlan;
+import com.gym.enterprise_system.entity.Subscription;
+import com.gym.enterprise_system.entity.User;
+import com.gym.enterprise_system.repository.InvoicePaymentRepository;
+import com.gym.enterprise_system.repository.MembershipPlanRepository;
+import com.gym.enterprise_system.repository.SubscriptionRepository;
+import com.gym.enterprise_system.repository.UserRepository;
+import com.gym.enterprise_system.service.SubscriptionService; // ADD IMPORT
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -130,8 +140,8 @@ public class SubscriptionServiceImpl implements SubscriptionService { // ADD IMP
         org.springframework.http.HttpEntity<org.springframework.util.MultiValueMap<String, String>> requestEntity = new org.springframework.http.HttpEntity<>(
                 body, headers);
 
-        java.util.Map<String, Object> response = restTemplate.postForObject(baseUrl + "/gwprocess/v4/api.php",
-                requestEntity, java.util.Map.class);
+        Map<String, Object> response = restTemplate.postForObject(baseUrl + "/gwprocess/v4/api.php", requestEntity,
+                Map.class);
 
         if (response != null && "SUCCESS".equals(response.get("status"))) {
             return (String) response.get("GatewayPageURL"); // Return the URL to redirect the user to
