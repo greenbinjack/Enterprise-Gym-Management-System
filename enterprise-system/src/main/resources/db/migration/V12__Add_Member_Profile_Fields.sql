@@ -1,0 +1,5 @@
+ALTER TABLE users ADD COLUMN phone VARCHAR(20);
+
+ALTER TABLE users ADD COLUMN address TEXT;
+
+ALTER TABLE users ADD COLUMN profile_photo_path VARCHAR(500);

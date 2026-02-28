@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -36,7 +37,7 @@ public class SubscriptionController {
         String status = requestParams.get("status");
 
         subscriptionService.handlePaymentCallback(tranId, status);
-        return new RedirectView("http://localhost:5173/dashboard?payment=success");
+        return new RedirectView("http://localhost:5173/member/dashboard?payment=success");
     }
 
     @CrossOrigin(origins = "*")
@@ -44,7 +45,7 @@ public class SubscriptionController {
     public RedirectView paymentFail(@RequestParam Map<String, String> requestParams) {
         String tranId = requestParams.get("tran_id");
         subscriptionService.handlePaymentCallback(tranId, "FAILED");
-        return new RedirectView("http://localhost:5173/dashboard?payment=failed");
+        return new RedirectView("http://localhost:5173/member/dashboard?payment=failed");
     }
 
     @CrossOrigin(origins = "*")
@@ -52,12 +53,13 @@ public class SubscriptionController {
     public RedirectView paymentCancel(@RequestParam Map<String, String> requestParams) {
         String tranId = requestParams.get("tran_id");
         subscriptionService.handlePaymentCallback(tranId, "CANCELLED");
-        return new RedirectView("http://localhost:5173/dashboard?payment=cancelled");
+        return new RedirectView("http://localhost:5173/member/dashboard?payment=cancelled");
     }
 
+    // Update the getStatus method to return the new List
     @GetMapping("/status/{userId}")
-    public ResponseEntity<SubscriptionStatusResponseDto> getStatus(@PathVariable UUID userId) {
-        return ResponseEntity.ok(subscriptionService.checkUserSubscriptionStatus(userId));
+    public ResponseEntity<List<SubscriptionStatusResponseDto>> getStatus(@PathVariable UUID userId) {
+        return ResponseEntity.ok(subscriptionService.getUserSubscriptions(userId));
     }
 
     @GetMapping("/plans/{userId}")
@@ -65,5 +67,4 @@ public class SubscriptionController {
         return ResponseEntity.ok(subscriptionService.getAvailablePlansForUser(userId));
     }
 
-    // THE OLD @PostMapping("/checkout") HAS BEEN DELETED!
 }

@@ -79,10 +79,12 @@ CREATE TABLE invoices_payments (
 
 -- 4. The PostgreSQL Trigger for Instant Activation
 -- 4. The PostgreSQL Trigger for Instant Activation
+-- Rewrite the payment processor trigger to support concurrent subscriptions
 CREATE OR REPLACE FUNCTION trg_process_successful_payment()
 RETURNS TRIGGER AS $$
 DECLARE
     new_end_date TIMESTAMP WITH TIME ZONE;
+    existing_sub_id UUID;
 BEGIN
     -- Check if the status is SUCCESS and (if it's an update) that it wasn't already SUCCESS
     IF NEW.payment_status = 'SUCCESS' AND (TG_OP = 'INSERT' OR OLD.payment_status <> 'SUCCESS') THEN
@@ -94,15 +96,26 @@ BEGIN
             new_end_date := CURRENT_TIMESTAMP + INTERVAL '1 month';
         END IF;
 
-        -- Update the user's subscription record
-        UPDATE subscriptions 
-        SET plan_id = NEW.plan_id,
-            billing_cycle = NEW.billing_cycle,
-            status = 'ACTIVE', 
-            start_date = CURRENT_TIMESTAMP,
-            end_date = new_end_date,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE user_id = NEW.user_id;
+        -- 🚨 THE FIX: Check if the user already has a record for THIS EXACT PLAN
+        SELECT id INTO existing_sub_id 
+        FROM subscriptions 
+        WHERE user_id = NEW.user_id AND plan_id = NEW.plan_id
+        LIMIT 1;
+
+        IF existing_sub_id IS NOT NULL THEN
+            -- RENEWAL: Update only the specific existing plan
+            UPDATE subscriptions 
+            SET billing_cycle = NEW.billing_cycle,
+                status = 'ACTIVE', 
+                start_date = CURRENT_TIMESTAMP,
+                end_date = new_end_date,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = existing_sub_id;
+        ELSE
+            -- NEW CONCURRENT PURCHASE: Insert a brand new subscription row
+            INSERT INTO subscriptions (user_id, plan_id, billing_cycle, status, start_date, end_date)
+            VALUES (NEW.user_id, NEW.plan_id, NEW.billing_cycle, 'ACTIVE', CURRENT_TIMESTAMP, new_end_date);
+        END IF;
     END IF;
     RETURN NEW;
 END;

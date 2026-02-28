@@ -43,4 +43,21 @@ public class User {
     @Builder.Default
     @Column(name = "is_active")
     private Boolean isActive = true;
+
+    // Add these under your existing fields:
+    @Column(name = "phone")
+    private String phone;
+
+    @Column(name = "address")
+    private String address;
+
+    @Column(name = "profile_photo_path")
+    private String profilePhotoPath;
+
+    // THE GATEKEEPER CHECK: Returns true only if ALL required fields are filled
+    public boolean isProfileComplete() {
+        return phone != null && !phone.trim().isEmpty() &&
+                address != null && !address.trim().isEmpty() &&
+                profilePhotoPath != null && !profilePhotoPath.trim().isEmpty();
+    }
 }

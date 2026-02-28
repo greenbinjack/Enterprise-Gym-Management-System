@@ -23,4 +23,6 @@ public class MembershipPlan {
     private Integer classLimitPerMonth;
     private Integer ptSessionsPerMonth;
     private Boolean isActive;
+    private String category;
+    private UUID recurringGroupId;
 }

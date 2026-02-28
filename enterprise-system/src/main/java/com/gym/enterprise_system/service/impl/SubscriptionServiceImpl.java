@@ -56,7 +56,7 @@ public class SubscriptionServiceImpl implements SubscriptionService { // ADD IMP
         Subscription sub = subscriptionRepository.findByUserId(userId).orElse(null);
 
         if (sub == null || sub.getPlan() == null || sub.getEndDate() == null) {
-            return new SubscriptionStatusResponseDto("NONE", null, null);
+            return new SubscriptionStatusResponseDto(null, null, null, "NONE", null);
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -70,23 +70,15 @@ public class SubscriptionServiceImpl implements SubscriptionService { // ADD IMP
         }
 
         // Return the full object including the Plan Name!
-        return new SubscriptionStatusResponseDto(currentStatus, sub.getPlan().getName(), sub.getEndDate());
+        return new SubscriptionStatusResponseDto(sub.getPlan().getId(), sub.getPlan().getName(),
+                sub.getPlan().getCategory(), currentStatus, sub.getEndDate());
     }
 
     @Override
     public List<PlanResponseDto> getAvailablePlansForUser(UUID userId) {
-        Subscription currentSub = subscriptionRepository.findByUserId(userId).orElse(null);
-        SubscriptionStatusResponseDto statusResponse = checkUserSubscriptionStatus(userId); // Get the new DTO
-
-        int currentTier = (currentSub != null && currentSub.getPlan() != null
-                && "ACTIVE".equals(statusResponse.status())) // Extract the status string from DTO
-                        ? currentSub.getPlan().getTierLevel()
-                        : 0;
-
         return planRepository.findByIsActiveTrue().stream()
-                .filter(plan -> plan.getTierLevel() >= currentTier)
                 .map(p -> new PlanResponseDto(p.getId(), p.getName(), p.getTierLevel(), p.getMonthlyPrice(),
-                        p.getYearlyPrice(), p.getClassLimitPerMonth(), p.getPtSessionsPerMonth()))
+                        p.getYearlyPrice(), p.getClassLimitPerMonth(), p.getPtSessionsPerMonth(), p.getCategory()))
                 .collect(Collectors.toList());
     }
 
@@ -94,6 +86,17 @@ public class SubscriptionServiceImpl implements SubscriptionService { // ADD IMP
     @Override
     @Transactional
     public String initiateSslCommerzPayment(PaymentRequestDto request) {
+        // THE FIX: Add "sub.getPlan() != null" before checking the ID!
+        boolean alreadyHasActivePlan = subscriptionRepository.findAllByUserId(request.userId()).stream()
+                .anyMatch(sub -> sub.getPlan() != null &&
+                        sub.getPlan().getId().equals(request.planId()) &&
+                        sub.getEndDate() != null &&
+                        LocalDateTime.now().isBefore(sub.getEndDate()));
+
+        if (alreadyHasActivePlan) {
+            throw new IllegalArgumentException("You already have an active subscription for this plan.");
+        }
+
         MembershipPlan plan = planRepository.findById(request.planId()).orElseThrow();
         User user = userRepository.findById(request.userId()).orElseThrow();
         BigDecimal amount = request.billingCycle().equals("YEARLY") ? plan.getYearlyPrice() : plan.getMonthlyPrice();
@@ -165,5 +168,27 @@ public class SubscriptionServiceImpl implements SubscriptionService { // ADD IMP
             invoice.setPaymentStatus("FAILED");
         }
         invoiceRepository.save(invoice);
+    }
+
+    public List<SubscriptionStatusResponseDto> getUserSubscriptions(UUID userId) {
+        return subscriptionRepository.findAllByUserId(userId).stream()
+                .filter(sub -> sub.getPlan() != null) // THE FIX: Ignore empty dummy rows
+                .map(sub -> {
+                    String currentStatus = "NONE";
+                    if (sub.getEndDate() != null) {
+                        if (LocalDateTime.now().isBefore(sub.getEndDate())) {
+                            currentStatus = "ACTIVE";
+                        } else if (LocalDateTime.now().isBefore(sub.getEndDate().plusDays(5))) {
+                            currentStatus = "GRACE_PERIOD";
+                        }
+                    }
+                    return new SubscriptionStatusResponseDto(
+                            sub.getPlan().getId(),
+                            sub.getPlan().getName(),
+                            sub.getPlan().getCategory(),
+                            currentStatus,
+                            sub.getEndDate());
+                })
+                .collect(Collectors.toList());
     }
 }

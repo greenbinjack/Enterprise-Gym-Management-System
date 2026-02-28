@@ -19,7 +19,7 @@ export default function Login() {
             if (response.data.role === 'TRAINER') {
                 navigate('/trainer');
             } else {
-                navigate('/dashboard');
+                navigate('/member/dashboard');
             }
         } catch (err) {
             setError(err.response?.data?.error || 'Invalid credentials');

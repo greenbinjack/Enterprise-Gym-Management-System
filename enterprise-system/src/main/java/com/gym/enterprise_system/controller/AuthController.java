@@ -49,6 +49,13 @@ public class AuthController {
     public ResponseEntity<?> loginUser(@Valid @RequestBody LoginDto loginDto) {
         try {
             User user = userService.login(loginDto);
+
+            // THE FIX: Intercept banned/inactive members right here!
+            if (user.getIsActive() != null && !user.getIsActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Your account has been suspended. Please contact administration."));
+            }
+
             Map<String, Object> response = new HashMap<>();
             response.put("id", user.getId());
             response.put("firstName", user.getFirstName());

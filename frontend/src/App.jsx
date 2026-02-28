@@ -18,6 +18,10 @@ import AdminFacilities from './components/AdminFacilities';
 import AdminUsers from './components/AdminUsers';
 import AdminRecruitmentBoard from './components/AdminRecruitmentBoard';
 import AdminInventory from './components/AdminInventory';
+import MemberStore from './components/MemberStore';
+import MemberLayout from './components/MemberLayout';
+import MemberDashboard from './components/MemberDashboard';
+import MemberProfile from './components/MemberProfile';
 
 // ... inside your <Routes> block add:
 
@@ -53,6 +57,11 @@ function App() {
           <Route path="/trainer/schedule" element={<TrainerSchedule />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route element={<MemberLayout />}>
+            <Route path="/member/dashboard" element={<MemberDashboard />} />
+            <Route path="/member/store" element={<MemberStore />} />
+            <Route path="/member/profile" element={<MemberProfile />} />
+          </Route>
         </Routes>
       </div>
     </Router>

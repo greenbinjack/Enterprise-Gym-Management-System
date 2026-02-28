@@ -18,4 +18,6 @@ public interface SubscriptionService {
     String initiateSslCommerzPayment(PaymentRequestDto request);
 
     void handlePaymentCallback(String tranId, String status);
+
+    List<SubscriptionStatusResponseDto> getUserSubscriptions(UUID userId);
 }
