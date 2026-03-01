@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import BackButton from './BackButton'; // IMPORT IT
+import api from '../api/axiosConfig';
 
 export default function AdminLogin() {
     const [formData, setFormData] = useState({ email: '', password: '' });
@@ -15,7 +14,7 @@ export default function AdminLogin() {
         setError('');
         try {
             // Hitting the strictly protected admin endpoint
-            const response = await axios.post('http://localhost:8080/api/auth/admin-login', formData);
+            const response = await api.post('/api/auth/admin-login', formData);
             localStorage.setItem('user', JSON.stringify(response.data));
             localStorage.setItem('token', 'simulated-jwt-token-for-now');
             localStorage.setItem('userRole', response.data.role);
@@ -31,7 +30,6 @@ export default function AdminLogin() {
     return (
         <div className="flex justify-center items-center min-h-screen bg-gray-900 px-4">
             <div className="w-full max-w-md">
-                <BackButton /> {/* ADD IT OUTSIDE THE DARK BOX, OR INSIDE IF YOU PREFER */}
                 <div className="bg-gray-800 p-8 rounded-xl shadow-2xl border border-gray-700">
                     <div className="text-center mb-8"></div>
                     <h2 className="text-3xl font-extrabold text-white tracking-tight">System Admin</h2>

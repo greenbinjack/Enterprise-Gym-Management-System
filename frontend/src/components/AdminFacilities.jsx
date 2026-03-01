@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/axiosConfig';
 
 export default function AdminFacilities() {
     const [rooms, setRooms] = useState([]);
@@ -11,7 +11,7 @@ export default function AdminFacilities() {
     }, []);
 
     const fetchRooms = async () => {
-        const response = await axios.get('http://localhost:8080/api/admin/facilities/rooms');
+        const response = await api.get('/api/admin/facilities/rooms');
         setRooms(response.data);
     };
 
@@ -19,7 +19,7 @@ export default function AdminFacilities() {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            await axios.post('http://localhost:8080/api/admin/facilities/rooms', newRoom);
+            await api.post('/api/admin/facilities/rooms', newRoom);
             setNewRoom({ name: '', totalCapacity: '' });
             fetchRooms(); // Refresh list
         } catch (error) {

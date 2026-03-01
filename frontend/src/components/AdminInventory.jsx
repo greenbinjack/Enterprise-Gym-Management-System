@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/axiosConfig';
 
 export default function AdminInventory() {
     const [equipment, setEquipment] = useState([]);
@@ -7,7 +7,7 @@ export default function AdminInventory() {
     useEffect(() => { fetchInventory(); }, []);
 
     const fetchInventory = async () => {
-        const response = await axios.get('http://localhost:8080/api/admin/equipment');
+        const response = await api.get('/api/admin/equipment');
         setEquipment(response.data);
     };
 

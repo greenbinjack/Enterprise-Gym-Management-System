@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import BackButton from './BackButton';
+import api from '../api/axiosConfig';
 
 export default function Plans() {
     const navigate = useNavigate();
@@ -14,8 +13,7 @@ export default function Plans() {
     useEffect(() => {
         const fetchPlans = async () => {
             try {
-                const response = await axios.get('http://localhost:8080/api/membership-plans');
-                // Filter only active plans
+                const response = await api.get('/api/membership-plans');
                 setGymPlans(response.data.filter(plan => plan.isActive));
             } catch (error) {
                 console.error("Failed to load plans", error);
@@ -41,8 +39,7 @@ export default function Plans() {
         setLoadingPlan(plan.id);
 
         try {
-            // FIXED THE URL HERE to match your SubscriptionController!
-            const response = await axios.post('http://localhost:8080/api/subscriptions/initiate-payment', {
+            const response = await api.post('/api/subscriptions/initiate-payment', {
                 userId: user.id,
                 planId: plan.id,
                 amount: price,
@@ -54,7 +51,7 @@ export default function Plans() {
                 window.location.href = response.data.gatewayUrl;
             }
         } catch (error) {
-            console.error(error); // Add this so you can see the exact error in the F12 console!
+            console.error(error);
             alert("Payment setup failed. Please try again.");
             setIsLoading(false);
             setLoadingPlan(null);
@@ -62,61 +59,119 @@ export default function Plans() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto">
-                <BackButton />
+        <div className="min-h-screen bg-cream dark:bg-darkBg transition-colors py-12 px-4 sm:px-6 lg:px-12 relative overflow-hidden">
+            {/* Background decorative blobs */}
+            <div className="absolute top-0 -left-40 w-96 h-96 bg-lightSage/20 dark:bg-olive/5 rounded-full filter blur-[100px] pointer-events-none"></div>
+            <div className="absolute bottom-0 -right-40 w-96 h-96 bg-brown/10 dark:bg-lightSage/5 rounded-full filter blur-[100px] pointer-events-none"></div>
 
-                <div className="text-center mb-12">
-                    <h2 className="text-4xl font-extrabold text-gray-900 mb-4">Membership Plans</h2>
+            <div className="max-w-7xl mx-auto relative z-10">
+                {/* Header Controls Removed */}
+
+                <div className="text-center mb-20">
+                    <span className="text-olive dark:text-lightSage font-bold uppercase tracking-widest text-sm mb-4 block">Membership Options</span>
+                    <h2 className="text-5xl md:text-6xl font-black text-gray-900 dark:text-cream tracking-tighter mb-6">Choose Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-olive to-brown dark:from-lightSage dark:to-cream">Journey.</span></h2>
+                    <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">Select the perfect tier to match your fitness ambitions. All memberships include standard full-facility 24/7 access.</p>
 
                     {/* Billing Toggle Switch */}
-                    <div className="flex justify-center items-center space-x-4 mt-8">
-                        <span className={`text-sm ${billingCycle === 'monthly' ? 'font-bold text-blue-600' : 'text-gray-500'}`}>Monthly</span>
+                    <div className="flex justify-center items-center space-x-6 mt-12 bg-white/50 dark:bg-darkCard/50 backdrop-blur-sm shadow-sm inline-flex p-2 rounded-full border border-gray-200 dark:border-gray-800">
+                        <span className={`text-sm tracking-widest uppercase pl-4 transition-colors ${billingCycle === 'monthly' ? 'font-black text-gray-900 dark:text-cream' : 'text-gray-400 dark:text-gray-500 font-bold'}`}>Monthly</span>
                         <button
                             onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
-                            className="relative w-14 h-7 bg-gray-300 rounded-full transition-colors duration-200 focus:outline-none"
+                            className="relative w-16 h-8 bg-gray-200 dark:bg-gray-800 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-olive dark:focus:ring-offset-darkBg shadow-inner"
                         >
-                            <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform duration-200 shadow-sm ${billingCycle === 'yearly' ? 'translate-x-7' : ''}`}></div>
+                            <div className={`absolute top-1 left-1 w-6 h-6 bg-olive dark:bg-lightSage rounded-full transition-transform duration-300 shadow-md ${billingCycle === 'yearly' ? 'translate-x-8' : ''}`}></div>
                         </button>
-                        <span className={`text-sm ${billingCycle === 'yearly' ? 'font-bold text-blue-600' : 'text-gray-500'}`}>Yearly (Save 15%+)</span>
+                        <span className={`text-sm tracking-widest uppercase pr-4 flex items-center gap-2 transition-colors ${billingCycle === 'yearly' ? 'font-black text-gray-900 dark:text-cream' : 'text-gray-400 dark:text-gray-500 font-bold'}`}>
+                            Yearly <span className="text-[10px] bg-olive/10 dark:bg-lightSage/20 text-olive dark:text-lightSage border border-olive/20 dark:border-lightSage/30 px-2.5 py-1 rounded-full animate-pulse">Save 15%</span>
+                        </span>
                     </div>
                 </div>
 
                 {isFetching ? (
-                    <div className="flex justify-center h-64 items-center"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div></div>
+                    <div className="flex justify-center h-64 items-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-olive dark:border-lightSage"></div>
+                    </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {gymPlans.sort((a, b) => a.tierLevel - b.tierLevel).map((plan) => (
-                            <div key={plan.id} className={`bg-white rounded-2xl shadow-sm border p-8 flex flex-col ${plan.tierLevel === 2 ? 'border-blue-500 ring-2 ring-blue-100 scale-105' : 'border-gray-200'}`}>
-                                <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 xl:gap-10">
+                        {gymPlans.sort((a, b) => a.monthlyPrice - b.monthlyPrice).map((plan) => {
+                            // Automatically assume the middle plan is the "Premium" popular choice
+                            const isPremium = plan.monthlyPrice > 5000 && plan.monthlyPrice < 15000;
 
-                                <div className="mt-4 mb-6">
-                                    <span className="text-4xl font-black">৳{billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice}</span>
-                                    <span className="text-gray-500 text-sm ml-1">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
-                                </div>
-
-                                <ul className="space-y-4 mb-8 flex-1">
-                                    <li className="flex items-center text-gray-600">
-                                        <CheckIcon /> {plan.classLimitPerMonth === -1 ? 'Unlimited' : plan.classLimitPerMonth} Monthly Classes
-                                    </li>
-                                    <li className="flex items-center text-gray-600">
-                                        <CheckIcon /> {plan.ptSessionsPerMonth} Personal Training Sessions
-                                    </li>
-                                    <li className="flex items-center text-gray-600">
-                                        <CheckIcon /> Full Gym Floor Access
-                                    </li>
-                                </ul>
-
-                                <button
-                                    onClick={() => handleSelectPlan(plan)}
-                                    disabled={isLoading}
-                                    className={`w-full py-3 rounded-xl font-bold transition-all ${plan.tierLevel === 2 ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                            return (
+                                <div
+                                    key={plan.id}
+                                    className={`relative bg-white dark:bg-darkCard rounded-[2rem] shadow-xl transition-all duration-500 flex flex-col p-10
+                                        ${isPremium
+                                            ? 'border-2 border-olive dark:border-lightSage transform md:-translate-y-4 z-10 shadow-olive/10 dark:shadow-lightSage/5'
+                                            : 'border border-gray-100 dark:border-gray-800 hover:-translate-y-2 hover:shadow-2xl'
                                         }`}
                                 >
-                                    {isLoading && loadingPlan === plan.id ? 'Connecting...' : 'Choose Plan'}
-                                </button>
-                            </div>
-                        ))}
+                                    {isPremium && (
+                                        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                                            <span className="bg-gradient-to-r from-olive to-brown text-white dark:from-lightSage dark:to-olive dark:text-darkBg text-xs font-black uppercase tracking-widest py-1.5 px-6 rounded-full shadow-lg border border-white/20">
+                                                Most Popular
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    <h3 className="text-3xl font-black text-gray-900 dark:text-cream mb-4">{plan.name}</h3>
+
+                                    <div className="mb-8 flex items-baseline">
+                                        <span className="text-5xl font-black text-gray-900 dark:text-white tracking-tighter">
+                                            ৳{billingCycle === 'monthly' ? (plan.monthlyPrice || 0).toLocaleString() : (plan.yearlyPrice || 0).toLocaleString()}
+                                        </span>
+                                        <span className="text-gray-500 dark:text-gray-400 font-bold ml-2">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
+                                    </div>
+
+                                    <div className="w-full h-px bg-gradient-to-r from-gray-200 via-gray-300 to-transparent dark:from-gray-800 dark:via-gray-700 mb-8"></div>
+
+                                    <ul className="space-y-6 mb-12 flex-1">
+                                        <li className="flex items-start text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
+                                            <CheckIcon />
+                                            <span>
+                                                <strong className="text-gray-900 dark:text-white block">{plan.classLimitPerMonth === -1 ? 'Unlimited' : plan.classLimitPerMonth} Classes per Month</strong>
+                                                <span className="text-sm opacity-80">Access to all group sessions</span>
+                                            </span>
+                                        </li>
+                                        <li className="flex items-start text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
+                                            <CheckIcon />
+                                            <span>
+                                                <strong className="text-gray-900 dark:text-white block">{plan.ptSessionsPerMonth} PT Sessions</strong>
+                                                <span className="text-sm opacity-80">1-on-1 personalized training</span>
+                                            </span>
+                                        </li>
+                                        <li className="flex items-start text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
+                                            <CheckIcon />
+                                            <span>
+                                                <strong className="text-gray-900 dark:text-white block">Full Facility Access</strong>
+                                                <span className="text-sm opacity-80">24/7 gym floor entry</span>
+                                            </span>
+                                        </li>
+                                        {isPremium && (
+                                            <li className="flex items-start text-olive dark:text-lightSage font-bold leading-relaxed">
+                                                <CheckIcon />
+                                                <span>
+                                                    <span className="block">Premium Recovery Lounge</span>
+                                                    <span className="text-sm opacity-80 font-medium">Sauna & Massage therapy</span>
+                                                </span>
+                                            </li>
+                                        )}
+                                    </ul>
+
+                                    <button
+                                        onClick={() => handleSelectPlan(plan)}
+                                        disabled={isLoading}
+                                        className={`w-full py-4 rounded-xl font-black text-lg transition-all duration-300 shadow-md transform hover:-translate-y-1
+                                            ${isPremium
+                                                ? 'bg-olive text-white hover:bg-olive/90 hover:shadow-olive/30 dark:bg-lightSage dark:text-darkBg dark:hover:bg-cream dark:hover:shadow-lightSage/30'
+                                                : 'bg-gray-900 text-white hover:bg-black dark:bg-gray-800 dark:text-cream dark:hover:bg-gray-700 hover:shadow-xl'
+                                            }`}
+                                    >
+                                        {isLoading && loadingPlan === plan.id ? 'Processing...' : 'Select Plan'}
+                                    </button>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
             </div>
@@ -124,11 +179,10 @@ export default function Plans() {
     );
 }
 
-// Simple SVG Component
 function CheckIcon() {
     return (
-        <svg className="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+        <svg className="h-6 w-6 text-olive dark:text-lightSage mr-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
         </svg>
     );
 }

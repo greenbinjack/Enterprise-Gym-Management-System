@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axiosConfig';
 
 export default function AdminScheduleBuilder() {
     const [existingPlans, setExistingPlans] = useState([]);
@@ -42,7 +42,7 @@ export default function AdminScheduleBuilder() {
 
     const fetchPlans = async () => {
         try {
-            const plansRes = await axios.get('http://localhost:8080/api/membership-plans');
+            const plansRes = await api.get('/api/membership-plans');
             setExistingPlans(plansRes.data || []);
         } catch (error) {
             console.error("Failed to fetch plans", error);
@@ -67,7 +67,7 @@ export default function AdminScheduleBuilder() {
 
         try {
             // Check availability for the next 52 weeks implicitly for recurring indefinitely
-            const res = await axios.post('http://localhost:8080/api/scheduling/admin/check-availability', {
+            const res = await api.post('/api/scheduling/admin/check-availability', {
                 dayOfWeek: planData.recurringDayOfWeek,
                 time: planData.recurringStartTime,
                 duration: planData.durationMinutes,
@@ -95,7 +95,7 @@ export default function AdminScheduleBuilder() {
         setStatus({ type: '', text: '' });
         setIsSubmitting(true);
         try {
-            const res = await axios.post('http://localhost:8080/api/membership-plans', planData);
+            const res = await api.post('/api/membership-plans', planData);
             setStatus({ type: 'success', text: res.data.message || 'Membership Plan created successfully!' });
 
             // Reset form

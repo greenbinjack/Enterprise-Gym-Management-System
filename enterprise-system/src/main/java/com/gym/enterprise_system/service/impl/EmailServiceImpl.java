@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -16,6 +17,7 @@ public class EmailServiceImpl implements EmailService {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
+    @Async
     @Override
     public void sendTrainerWelcomeEmail(String toEmail, String firstName) {
         SimpleMailMessage message = new SimpleMailMessage();
@@ -39,6 +41,7 @@ public class EmailServiceImpl implements EmailService {
         mailSender.send(message);
     }
 
+    @Async
     @Override
     public void sendPasswordResetEmail(String toEmail, String token) {
         SimpleMailMessage message = new SimpleMailMessage();
@@ -59,6 +62,7 @@ public class EmailServiceImpl implements EmailService {
         mailSender.send(message);
     }
 
+    @Async
     @Override
     public void sendStaffWelcomeEmail(String toEmail, String firstName, String tempPassword) {
         SimpleMailMessage message = new SimpleMailMessage();

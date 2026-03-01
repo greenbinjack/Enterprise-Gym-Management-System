@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/axiosConfig';
 
 export default function AdminUsers() {
     const [users, setUsers] = useState([]);
@@ -11,7 +11,7 @@ export default function AdminUsers() {
 
     const fetchUsers = async () => {
         try {
-            const response = await axios.get('http://localhost:8080/api/admin/users');
+            const response = await api.get('/api/admin/users');
             setUsers(response.data);
         } catch (error) {
             console.error("Failed to load users", error);
@@ -30,7 +30,7 @@ export default function AdminUsers() {
 
         try {
             // If they are banned, we send true (make active). If they are active/inactive, we send false (ban them).
-            await axios.put(`http://localhost:8080/api/admin/users/${id}/toggle-status`, {
+            await api.put(`/api/admin/users/${id}/toggle-status`, {
                 isActive: isCurrentlyBanned
             });
             fetchUsers(); // Refresh the board

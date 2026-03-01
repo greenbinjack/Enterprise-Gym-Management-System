@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-import BackButton from './BackButton';
+import api from '../api/axiosConfig';
 
 export default function TrainerSchedule() {
     const [myClasses, setMyClasses] = useState([]);
@@ -12,7 +11,8 @@ export default function TrainerSchedule() {
                 const storedUser = JSON.parse(localStorage.getItem('user'));
                 if (!storedUser || storedUser.role !== 'TRAINER') return;
 
-                const response = await axios.get(`http://localhost:8080/api/scheduling/trainer/${storedUser.id}/classes`);
+                // Use the configured api wrapper
+                const response = await api.get(`/api/scheduling/trainer/${storedUser.id}/classes`);
                 setMyClasses(response.data);
             } catch (error) {
                 console.error("Failed to load trainer schedule", error);
@@ -24,47 +24,77 @@ export default function TrainerSchedule() {
     }, []);
 
     return (
-        <div className="bg-gray-50 py-8 px-4 sm:px-6 lg:px-8 flex-grow w-full min-h-full">
-            <div className="max-w-5xl mx-auto">
-                <BackButton />
-                <h2 className="text-3xl font-extrabold text-gray-900 mb-8">My Teaching Schedule</h2>
+        <div className="p-6 md:p-10 max-w-7xl mx-auto h-full overflow-y-auto w-full">
+            <div className="mb-8">
+                <h1 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-cream tracking-tight mb-2">
+                    My Teaching <span className="text-olive dark:text-lightSage">Schedule</span>
+                </h1>
+                <p className="text-gray-500 dark:text-gray-400 font-medium tracking-wide">View your assigned classes and manage your roster.</p>
+            </div>
 
-                {isLoading ? (
-                    <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>
-                ) : myClasses.length === 0 ? (
-                    <div className="bg-white p-8 rounded-xl shadow border text-center text-gray-500">
-                        You have no classes assigned at the moment.
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {myClasses.map(cls => (
-                            <div key={cls.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-                                <div className="flex justify-between items-start mb-4">
-                                    <h3 className="text-xl font-bold text-gray-900">{cls.name}</h3>
-                                    <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">
+            {isLoading ? (
+                <div className="flex justify-center items-center py-20 min-h-[300px]">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-olive dark:border-lightSage"></div>
+                </div>
+            ) : myClasses.length === 0 ? (
+                <div className="text-center py-16 px-6 bg-white dark:bg-darkCard rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+                    <span className="text-6xl mb-6 block opacity-80">🛋️</span>
+                    <h3 className="text-2xl font-black text-gray-900 dark:text-cream mb-2">No Classes Assigned</h3>
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">You have a clear schedule! Enjoy your free time.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {myClasses.map(cls => {
+                        const startDate = new Date(cls.startTime);
+                        const endDate = new Date(cls.endTime);
+                        const isUpcoming = startDate > new Date();
+
+                        return (
+                            <div key={cls.id} className="bg-white dark:bg-darkCard rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 flex flex-col h-full hover:shadow-lg hover:border-olive/30 dark:hover:border-lightSage/30 transition-all group duration-300">
+                                <div className="flex justify-between items-start mb-5 gap-3">
+                                    <h3 className="text-lg font-black text-gray-900 dark:text-cream leading-tight">{cls.name}</h3>
+                                    <span className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm whitespace-nowrap flex-shrink-0">
+                                        <svg className="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                         {cls.room.name}
                                     </span>
                                 </div>
 
-                                <div className="space-y-2 mb-6 text-gray-600 text-sm">
-                                    <p className="flex items-center">
-                                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                        {new Date(cls.startTime).toLocaleDateString()}
-                                    </p>
-                                    <p className="flex items-center">
-                                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                        {new Date(cls.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(cls.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </p>
+                                <div className="space-y-4 flex-grow mb-6 bg-gray-50/50 dark:bg-darkBg/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700/50">
+                                    <div className="flex items-start gap-3">
+                                        <div className="bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 w-12 py-1.5 rounded-lg text-center shadow-sm">
+                                            <div className="text-[9px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">{startDate.toLocaleString('default', { month: 'short' })}</div>
+                                            <div className="text-lg font-black text-gray-900 dark:text-cream leading-none">{startDate.getDate()}</div>
+                                        </div>
+                                        <div className="text-sm font-medium text-gray-600 dark:text-gray-400 flex flex-col justify-center h-12">
+                                            <p className="flex items-center gap-1.5">
+                                                <svg className="w-4 h-4 opacity-70 text-olive dark:text-lightSage" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                {startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </p>
+                                            <p className="flex items-center gap-1.5 mt-0.5 text-xs opacity-80">
+                                                <span className="w-4 inline-block text-center">to</span>
+                                                {endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <button className="w-full py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium transition-colors">
-                                    Open Live Roster
+                                <button
+                                    disabled={!isUpcoming}
+                                    className={`w-full py-3.5 rounded-xl font-bold transition-all shadow-sm focus:ring-2 focus:ring-offset-2 flex items-center justify-center gap-2 mt-auto
+                                    ${isUpcoming
+                                            ? 'bg-gray-900 hover:bg-black text-white dark:bg-cream dark:text-darkBg dark:hover:bg-white focus:ring-gray-900 dark:focus:ring-cream hover:shadow-md'
+                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed border-transparent'
+                                        }`}
+                                >
+                                    {isUpcoming ? (
+                                        <><span>📝</span> Open Live Roster</>
+                                    ) : 'Session Ended'}
                                 </button>
                             </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 }

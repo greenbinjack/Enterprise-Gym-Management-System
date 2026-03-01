@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
-import BackButton from './BackButton';
+import api from '../api/axiosConfig';
 
 export default function ForgotPassword() {
     const [email, setEmail] = useState('');
@@ -13,7 +12,7 @@ export default function ForgotPassword() {
         setStatus({ type: '', text: '' });
 
         try {
-            const response = await axios.post('http://localhost:8080/api/auth/forgot-password', { email });
+            const response = await api.post('/api/auth/forgot-password', { email });
             setStatus({ type: 'success', text: response.data.message });
             setEmail('');
         } catch (error) {
@@ -26,7 +25,6 @@ export default function ForgotPassword() {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <BackButton />
                 <div className="bg-white py-8 px-10 shadow sm:rounded-lg border border-gray-200">
                     <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Reset Password</h2>
                     <p className="text-sm text-gray-600 mb-6">Enter your email address and we'll send you a link to reset your password.</p>

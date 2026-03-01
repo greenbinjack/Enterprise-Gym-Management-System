@@ -4,6 +4,7 @@ import Register from './components/Register';
 import Login from './components/Login';
 import Plans from './components/Plans';
 import Careers from './components/Careers';
+import About from './components/About';
 import AdminDashboard from './components/AdminDashboard';
 import TrainerActivation from './components/TrainerActivation';
 import TrainerDashboard from './components/TrainerDashboard';
@@ -31,6 +32,7 @@ import StaffDashboard from './components/StaffDashboard';
 import StaffProfile from './components/StaffProfile';
 import UserDirectory from './components/UserDirectory';
 import EquipmentManagement from './components/EquipmentManagement';
+import PublicLayout from './components/PublicLayout';
 
 // ... inside your <Routes> block add:
 
@@ -39,17 +41,21 @@ function App() {
     <Router>
       <div className="bg-gray-100 min-h-screen font-sans text-gray-900">
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
-          {/* <Route path="/dashboard" element={<Dashboard />} /> */}
-          <Route path="/plans" element={<Plans />} />
-          <Route path="/careers" element={<Careers />} /> {/* Public */}
-          {/* Admin Routes */}
-          {/* Public & Member Routes remain standard */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/admin/login" element={<Navigate to="/login" replace />} />
+          {/* Public Routes with Navbar and Footer */}
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/plans" element={<Plans />} />
+            <Route path="/careers" element={<Careers />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/admin/login" element={<Navigate to="/login" replace />} />
+            <Route path="/trainer/activate" element={<TrainerActivation />} />
+          </Route>
 
+          {/* Admin Routes */}
           {/* The Unified Admin App - Protected for ADMIN only */}
           <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
             <Route element={<AdminLayout />}>
@@ -65,7 +71,6 @@ function App() {
           </Route>
 
           {/* Trainer Routes - Protected for TRAINER only */}
-          <Route path="/trainer/activate" element={<TrainerActivation />} />
           <Route element={<ProtectedRoute allowedRoles={['TRAINER']} />}>
             <Route element={<TrainerLayout />}>
               <Route path="/trainer/dashboard" element={<TrainerDashboard />} />
@@ -73,9 +78,6 @@ function App() {
               <Route path="/trainer/profile" element={<TrainerProfile />} />
             </Route>
           </Route>
-
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Staff Routes - Protected for STAFF only */}
           <Route element={<ProtectedRoute allowedRoles={['STAFF']} />}>

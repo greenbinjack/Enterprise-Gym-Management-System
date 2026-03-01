@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/axiosConfig';
 
 export default function StaffProfile() {
     const [profile, setProfile] = useState({ firstName: '', lastName: '', email: '', phone: '', address: '' });
@@ -13,7 +13,7 @@ export default function StaffProfile() {
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const res = await axios.get(`http://localhost:8080/api/staff/profile/${userId}`);
+                const res = await api.get(`/api/staff/profile/${userId}`);
                 setProfile({
                     firstName: res.data.firstName || '',
                     lastName: res.data.lastName || '',
@@ -27,7 +27,7 @@ export default function StaffProfile() {
             }
         };
         if (userId) fetchProfile();
-    }, [userId]);
+    }, [userId, currentUser?.email]);
 
     const handlePhotoChange = (e) => {
         const file = e.target.files[0];
@@ -51,107 +51,102 @@ export default function StaffProfile() {
         if (selectedFile) formData.append('photo', selectedFile);
 
         try {
-            const res = await axios.put(`http://localhost:8080/api/staff/profile/${userId}`, formData, {
+            const res = await api.put(`/api/staff/profile/${userId}`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             setStatusMessage({ type: 'success', text: res.data.message });
             const updatedUser = { ...currentUser, firstName: profile.firstName };
             localStorage.setItem('user', JSON.stringify(updatedUser));
+
+            // Dispatch a custom event so the Sidebar (StaffLayout) can re-render to update the name
+            window.dispatchEvent(new Event('storage'));
         } catch (error) {
             setStatusMessage({ type: 'error', text: error.response?.data?.error || 'Failed to update profile.' });
         }
     };
 
+    const inputClass = "w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-colors " +
+        "bg-white border-gray-300 text-gray-900 focus:ring-olive " +
+        "dark:bg-darkBg dark:border-gray-700 dark:text-cream dark:focus:ring-lightSage";
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-6">
+        <div className="p-6 md:p-10 max-w-4xl mx-auto h-full overflow-y-auto">
             <div className="mb-8">
-                <h1 className="text-3xl font-black text-white">
-                    Profile <span className="text-green-400">Settings</span>
+                <h1 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-cream tracking-tight">
+                    Profile <span className="text-olive dark:text-lightSage">Settings</span>
                 </h1>
-                <p className="text-slate-400 mt-1">Update your personal information and photo.</p>
+                <p className="text-gray-500 dark:text-gray-400 mt-2 font-medium">Update your personal information and identification photo.</p>
             </div>
 
             {statusMessage.text && (
-                <div className={`mb-6 p-4 rounded-xl font-bold text-sm ${statusMessage.type === 'success' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                        statusMessage.type === 'error' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                            'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                <div className={`mb-6 p-4 rounded-xl font-bold text-sm shadow-sm ${statusMessage.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:border-green-800/50 dark:text-green-400' :
+                        statusMessage.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:border-red-800/50 dark:text-red-400' :
+                            'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800/50 dark:text-blue-400'
                     }`}>
+                    {statusMessage.type === 'loading' && <span className="inline-block animate-spin mr-2">↻</span>}
                     {statusMessage.text}
                 </div>
             )}
 
-            <form onSubmit={handleSave} className="bg-slate-800/60 border border-slate-700 rounded-2xl overflow-hidden max-w-3xl">
+            <form onSubmit={handleSave} className="bg-white dark:bg-darkCard border border-gray-100 dark:border-gray-800 rounded-3xl shadow-lg shadow-gray-200/50 dark:shadow-none overflow-hidden">
                 {/* Photo Section */}
-                <div className="p-8 border-b border-slate-700 flex flex-col sm:flex-row items-center gap-8">
+                <div className="p-8 border-b border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center gap-8 bg-gray-50/50 dark:bg-darkBg/50">
                     <div className="relative group">
-                        <div className="w-28 h-28 rounded-full border-4 border-slate-700 overflow-hidden bg-slate-700 flex items-center justify-center">
+                        <div className="w-32 h-32 rounded-3xl border-4 border-white dark:border-darkBg overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center shadow-xl">
                             {photoPreview ? (
                                 <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
                             ) : (
-                                <span className="text-4xl">👤</span>
+                                <span className="text-5xl text-gray-400 dark:text-gray-600">👤</span>
                             )}
                         </div>
-                        <label className="absolute bottom-0 right-0 bg-green-600 text-white p-2 rounded-full cursor-pointer shadow-lg hover:bg-green-700 transition-colors">
-                            📷
+                        <label className="absolute -bottom-3 -right-3 bg-olive text-white dark:bg-lightSage dark:text-darkBg w-12 h-12 flex items-center justify-center rounded-2xl cursor-pointer shadow-lg hover:scale-105 transition-transform border-4 border-white dark:border-darkCard">
+                            <span className="text-xl">📷</span>
                             <input type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
                         </label>
                     </div>
-                    <div>
-                        <h3 className="text-white font-bold text-xl">Profile Photo</h3>
-                        <p className="text-slate-400 text-sm mt-1">Upload a clear face photo for facility identification.</p>
+                    <div className="text-center sm:text-left">
+                        <h3 className="text-gray-900 dark:text-cream font-bold text-xl mb-1">Official ID Photo</h3>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs">Upload a clear face photo. This will be used for facility access control.</p>
                     </div>
                 </div>
 
                 {/* Fields */}
-                <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                     <div>
-                        <label className="block text-sm font-bold text-slate-300 mb-1">First Name</label>
-                        <input
-                            type="text" value={profile.firstName}
-                            onChange={e => setProfile({ ...profile, firstName: e.target.value })}
-                            className="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500"
-                            required
-                        />
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">First Name</label>
+                        <input type="text" value={profile.firstName} onChange={e => setProfile({ ...profile, firstName: e.target.value })} className={inputClass} required />
                     </div>
                     <div>
-                        <label className="block text-sm font-bold text-slate-300 mb-1">Last Name</label>
-                        <input
-                            type="text" value={profile.lastName}
-                            onChange={e => setProfile({ ...profile, lastName: e.target.value })}
-                            className="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500"
-                            required
-                        />
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Last Name</label>
+                        <input type="text" value={profile.lastName} onChange={e => setProfile({ ...profile, lastName: e.target.value })} className={inputClass} required />
                     </div>
                     <div className="md:col-span-2">
-                        <label className="block text-sm font-bold text-slate-300 mb-1">Email Address (Read-Only)</label>
-                        <input
-                            type="email" value={profile.email} readOnly
-                            className="w-full p-3 bg-slate-900/50 border border-slate-700 rounded-lg text-slate-500 cursor-not-allowed"
-                        />
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex justify-between items-center">
+                            <span>Email Address <span className="text-gray-400 font-normal ml-2">(Read-Only)</span></span>
+                        </label>
+                        <input type="email" value={profile.email} readOnly className={`${inputClass} bg-gray-50 dark:bg-black/20 text-gray-500 cursor-not-allowed`} />
                     </div>
                     <div>
-                        <label className="block text-sm font-bold text-slate-300 mb-1">Phone Number *</label>
-                        <input
-                            type="tel" value={profile.phone}
-                            onChange={e => setProfile({ ...profile, phone: e.target.value })}
-                            className="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500"
-                            placeholder="e.g. 01700000000" required
-                        />
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Phone Number *</label>
+                        <input type="tel" value={profile.phone} onChange={e => setProfile({ ...profile, phone: e.target.value })} className={inputClass} placeholder="e.g. 01700000000" required />
                     </div>
                     <div className="md:col-span-2">
-                        <label className="block text-sm font-bold text-slate-300 mb-1">Home Address *</label>
-                        <textarea
-                            value={profile.address}
-                            onChange={e => setProfile({ ...profile, address: e.target.value })}
-                            className="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500"
-                            rows="3" required
-                        />
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Home Address *</label>
+                        <textarea value={profile.address} onChange={e => setProfile({ ...profile, address: e.target.value })} className={inputClass} rows="3" required />
                     </div>
                 </div>
 
-                <div className="p-6 bg-slate-900/30 border-t border-slate-700 flex justify-end">
-                    <button type="submit" className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-10 rounded-xl shadow-lg transition-all">
-                        Save Changes
+                <div className="p-6 md:p-8 bg-gray-50/50 dark:bg-darkBg/50 border-t border-gray-100 dark:border-gray-800 flex justify-end">
+                    <button
+                        type="submit"
+                        disabled={statusMessage.type === 'loading'}
+                        className={`font-bold py-3 px-10 rounded-xl shadow-lg transition-all w-full md:w-auto flex items-center justify-center gap-2
+                            ${statusMessage.type === 'loading'
+                                ? 'bg-gray-400 dark:bg-gray-700 text-white cursor-not-allowed'
+                                : 'bg-olive hover:bg-olive/90 text-white dark:bg-lightSage dark:text-darkBg dark:hover:bg-lightSage/90'
+                            }`}
+                    >
+                        {statusMessage.type === 'loading' ? 'Saving...' : '💾 Save Profile'}
                     </button>
                 </div>
             </form>

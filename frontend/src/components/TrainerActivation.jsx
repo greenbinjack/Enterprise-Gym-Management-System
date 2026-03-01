@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import BackButton from './BackButton';
+import api from '../api/axiosConfig';
 
 export default function TrainerActivation() {
     const [formData, setFormData] = useState({ email: '', newPassword: '' });
@@ -11,7 +10,7 @@ export default function TrainerActivation() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('http://localhost:8080/api/trainer/activate', formData);
+            const response = await api.post('/api/trainer/activate', formData);
             setStatus({ type: 'success', text: response.data.message });
             setTimeout(() => navigate('/login'), 2000);
         } catch (err) {
@@ -22,7 +21,6 @@ export default function TrainerActivation() {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <BackButton />
                 <div className="bg-white py-8 px-10 shadow rounded-xl border border-gray-200">
                     <h2 className="text-center text-2xl font-extrabold text-gray-900 mb-6">Activate Trainer Account</h2>
 

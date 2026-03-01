@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import api from '../api/axiosConfig';
 
 export default function AdminCheckIn() {
     const [scannedId, setScannedId] = useState('');
@@ -11,7 +11,7 @@ export default function AdminCheckIn() {
     // Initial load and periodic refresh of active roster
     const fetchActiveRoster = async () => {
         try {
-            const res = await axios.get('http://localhost:8080/api/checkin/active');
+            const res = await api.get('/api/checkin/active');
             setActiveMembers(res.data);
         } catch (error) {
             console.error("Failed to load active check-ins", error);
@@ -38,7 +38,7 @@ export default function AdminCheckIn() {
         setScanResult(null);
 
         try {
-            const res = await axios.post('http://localhost:8080/api/checkin/scan', {
+            const res = await api.post('/api/checkin/scan', {
                 userId: scannedId.trim()
             });
 
@@ -98,8 +98,8 @@ export default function AdminCheckIn() {
             <div className={`transition-all duration-300 overflow-hidden ${scanResult ? 'h-24 opacity-100 mb-6' : 'h-0 opacity-0 mb-0'}`}>
                 {scanResult && (
                     <div className={`h-full p-6 rounded-2xl flex items-center justify-center space-x-4 shadow-sm border-2 ${scanResult.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' :
-                            scanResult.status === 'ENTER' ? 'bg-green-50 border-green-200 text-green-800' :
-                                'bg-blue-50 border-blue-200 text-blue-800'
+                        scanResult.status === 'ENTER' ? 'bg-green-50 border-green-200 text-green-800' :
+                            'bg-blue-50 border-blue-200 text-blue-800'
                         }`}>
                         <span className="text-4xl">
                             {scanResult.type === 'error' ? '❌' : scanResult.status === 'ENTER' ? '👋' : '🏃'}

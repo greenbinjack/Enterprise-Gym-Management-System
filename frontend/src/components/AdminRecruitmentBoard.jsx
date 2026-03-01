@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/axiosConfig';
 
 export default function AdminRecruitmentBoard() {
     const [board, setBoard] = useState({ needsReview: [], hired: [], rejected: [], fired: [] });
@@ -7,7 +7,7 @@ export default function AdminRecruitmentBoard() {
 
     const fetchBoard = async () => {
         try {
-            const response = await axios.get('http://localhost:8080/api/recruitment/board');
+            const response = await api.get('/api/recruitment/board');
             setBoard(response.data);
         } catch (error) {
             console.error("Failed to load recruitment board", error);
@@ -23,7 +23,7 @@ export default function AdminRecruitmentBoard() {
     // Action: Move Pending -> Rejected OR Rejected -> Pending
     const handleApplicationAction = async (id, action) => {
         try {
-            await axios.post(`http://localhost:8080/api/recruitment/applications/${id}/${action}`);
+            await api.post(`/api/recruitment/applications/${id}/${action}`);
             fetchBoard();
         } catch (error) { alert("Failed to move application."); }
     };
@@ -33,7 +33,7 @@ export default function AdminRecruitmentBoard() {
         const msg = makeActive ? "Restore this trainer's access and rehire them?" : "Fire this trainer and revoke system access immediately?";
         if (!window.confirm(msg)) return;
         try {
-            await axios.put(`http://localhost:8080/api/admin/users/${userId}/toggle-status`, { isActive: makeActive });
+            await api.put(`/api/admin/users/${userId}/toggle-status`, { isActive: makeActive });
             fetchBoard();
         } catch (error) { alert("Failed to change trainer status."); }
     };

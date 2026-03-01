@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axiosConfig';
 
 export default function ResetPassword() {
     const [searchParams] = useSearchParams();
@@ -37,7 +37,7 @@ export default function ResetPassword() {
         }
 
         try {
-            const response = await axios.post('http://localhost:8080/api/auth/reset-password', {
+            const response = await api.post('/api/auth/reset-password', {
                 token: token,
                 newPassword: newPassword
             });
@@ -89,8 +89,8 @@ export default function ResetPassword() {
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${confirmPassword && newPassword !== confirmPassword
-                                        ? 'border-red-300 focus:ring-red-500'
-                                        : 'border-gray-300 focus:ring-blue-500'
+                                    ? 'border-red-300 focus:ring-red-500'
+                                    : 'border-gray-300 focus:ring-blue-500'
                                     }`}
                                 required
                             />
@@ -99,8 +99,8 @@ export default function ResetPassword() {
                             type="submit"
                             disabled={isSubmitting || status.type === 'success'}
                             className={`w-full flex justify-center py-3 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white transition-colors ${isSubmitting || status.type === 'success'
-                                    ? 'bg-blue-400 cursor-not-allowed'
-                                    : 'bg-blue-600 hover:bg-blue-700'
+                                ? 'bg-blue-400 cursor-not-allowed'
+                                : 'bg-blue-600 hover:bg-blue-700'
                                 }`}
                         >
                             {isSubmitting ? 'Updating...' : 'Reset Password'}
