@@ -10,4 +10,6 @@ import java.util.UUID;
 @Repository
 public interface MembershipPlanRepository extends JpaRepository<MembershipPlan, UUID> {
     List<MembershipPlan> findByIsActiveTrue();
+
+    List<MembershipPlan> findByIsActiveTrueAndRecurringDayOfWeek(String recurringDayOfWeek);
 }

@@ -17,6 +17,9 @@ export default function AdminLogin() {
             // Hitting the strictly protected admin endpoint
             const response = await axios.post('http://localhost:8080/api/auth/admin-login', formData);
             localStorage.setItem('user', JSON.stringify(response.data));
+            localStorage.setItem('token', 'simulated-jwt-token-for-now');
+            localStorage.setItem('userRole', response.data.role);
+            localStorage.setItem('userId', response.data.id);
             navigate('/admin/dashboard'); // Redirect directly to the dashboard
         } catch (err) {
             setError(err.response?.data?.error || 'Invalid credentials');

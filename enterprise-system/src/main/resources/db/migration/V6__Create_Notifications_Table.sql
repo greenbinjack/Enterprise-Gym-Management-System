@@ -1,7 +1,0 @@
-CREATE TABLE notifications (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
-    user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    message VARCHAR(500) NOT NULL,
-    is_read BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);

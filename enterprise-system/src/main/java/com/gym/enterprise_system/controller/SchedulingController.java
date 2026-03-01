@@ -2,6 +2,7 @@ package com.gym.enterprise_system.controller;
 
 import com.gym.enterprise_system.entity.Room;
 import com.gym.enterprise_system.entity.User;
+import com.gym.enterprise_system.repository.ClassBookingRepository;
 import com.gym.enterprise_system.repository.ClassSessionRepository;
 import com.gym.enterprise_system.repository.RoomRepository;
 import com.gym.enterprise_system.repository.UserRepository;
@@ -28,6 +29,9 @@ public class SchedulingController {
 
     @Autowired
     private final ClassSessionRepository classSessionRepository;
+
+    @Autowired
+    private final ClassBookingRepository classBookingRepository;
 
     // Fetch dropdown data for the Admin UI
     @GetMapping("/setup-data")
@@ -58,13 +62,14 @@ public class SchedulingController {
         }
     }
 
-    // Trainer: View ONLY their assigned classes
-    @GetMapping("/trainer/{trainerId}/classes")
-    public ResponseEntity<?> getTrainerClasses(@PathVariable UUID trainerId) {
-        return ResponseEntity.ok(classSessionRepository.findAll().stream()
-                .filter(c -> c.getTrainer().getId().equals(trainerId))
-                .sorted((a, b) -> a.getStartTime().compareTo(b.getStartTime()))
-                .toList());
+    // Trainer: View their complete dashboard schedule
+    @GetMapping("/trainer/{trainerId}/dashboard")
+    public ResponseEntity<?> getTrainerDashboard(@PathVariable UUID trainerId) {
+        try {
+            return ResponseEntity.ok(schedulingService.getTrainerDashboardData(trainerId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/admin/check-availability")
@@ -106,6 +111,69 @@ public class SchedulingController {
             return ResponseEntity.ok(classSessionRepository.findAll().stream()
                     .sorted((a, b) -> a.getStartTime().compareTo(b.getStartTime()))
                     .toList());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Member: Fetch classes they are currently booked for
+    @GetMapping("/member/{userId}/bookings")
+    public ResponseEntity<?> getMemberBookings(@PathVariable UUID userId) {
+        try {
+            // In a real app, query ClassBookingRepository for 'ENROLLED' or 'WAITLISTED'
+            // For now, we will return a simplified list of class sessions joined by the
+            // User's bookings
+            List<Map<String, Object>> bookings = classBookingRepository.findAll().stream()
+                    .filter(b -> b.getUser().getId().equals(userId) &&
+                            ("ENROLLED".equals(b.getStatus()) || "WAITLISTED".equals(b.getStatus())))
+                    .map(b -> Map.<String, Object>of(
+                            "id", b.getClassSession().getId(),
+                            "name", b.getClassSession().getName(),
+                            "startTime", b.getClassSession().getStartTime(),
+                            "endTime", b.getClassSession().getEndTime(),
+                            "room", b.getClassSession().getRoom().getName(),
+                            "trainer",
+                            b.getClassSession().getTrainer().getFirstName() + " "
+                                    + b.getClassSession().getTrainer().getLastName(),
+                            "status", b.getStatus()))
+                    .sorted((a, b) -> ((java.time.LocalDateTime) a.get("startTime"))
+                            .compareTo((java.time.LocalDateTime) b.get("startTime")))
+                    .toList();
+
+            return ResponseEntity.ok(bookings);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Member: Book a class
+    @PostMapping("/member/book")
+    public ResponseEntity<?> bookClass(@RequestBody Map<String, String> request) {
+        try {
+            UUID userId = UUID.fromString(request.get("userId"));
+            UUID classId = UUID.fromString(request.get("classId"));
+
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
+            com.gym.enterprise_system.entity.ClassSession session = classSessionRepository.findById(classId)
+                    .orElseThrow(() -> new IllegalArgumentException("Class not found"));
+
+            // Check if already booked
+            if (classBookingRepository.findByClassSessionIdAndUserId(classId, userId).isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "You are already booked for this class."));
+            }
+
+            // Create Booking
+            com.gym.enterprise_system.entity.ClassBooking booking = com.gym.enterprise_system.entity.ClassBooking
+                    .builder()
+                    .classSession(session)
+                    .user(user)
+                    .status("ENROLLED") // Trigger will handle WAITLIST promotion if full
+                    .build();
+
+            classBookingRepository.save(booking);
+
+            return ResponseEntity.ok(Map.of("message", "Successfully booked class: " + session.getName()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

@@ -1,34 +1,32 @@
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 
-export default function AdminLayout() {
+export default function TrainerLayout() {
     const location = useLocation();
     const navigate = useNavigate();
 
+    const navItems = [
+        { path: '/trainer/dashboard', label: 'My Dashboard', icon: '🗓️' },
+        { path: '/trainer/schedule', label: 'Manage Schedule', icon: '🕒' },
+        { path: '/trainer/profile', label: 'Profile Settings', icon: '🧑‍🏫' }
+    ];
+
     const handleLogout = () => {
         localStorage.removeItem('user');
-        navigate('/admin/login');
+        localStorage.removeItem('token');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('userId');
+        navigate('/login');
     };
-
-    const navItems = [
-        { path: '/admin/dashboard', label: 'Command Center', icon: '📊' },
-        { path: '/admin/schedule-builder', label: 'Master Schedule', icon: '📅' },
-        { path: '/admin/facilities', label: 'Facility Config', icon: '🏢' },
-        { path: '/admin/users', label: 'User Directory', icon: '👥' },
-        { path: '/admin/checkins', label: 'Access Control', icon: '🎫' },
-        { path: '/admin/recruitment', label: 'Recruitment Board', icon: '📋' },
-        { path: '/admin/inventory', label: 'Inventory', icon: '🛒' },
-        { path: '/admin/staff', label: 'Manage Staff', icon: '🧑‍💼' },
-    ];
 
     return (
         <div className="flex h-screen bg-gray-100 font-sans">
             {/* Persistent Sidebar */}
-            <aside className="w-64 bg-slate-900 text-white flex flex-col shadow-xl">
+            <aside className="w-64 bg-slate-900 text-white flex flex-col shadow-xl hidden md:flex">
                 <div className="p-6 border-b border-slate-800">
                     <h1 className="text-xl font-black tracking-tight text-white">
-                        ENTERPRISE<span className="text-blue-500">GYM</span>
+                        ENTERPRISE<span className="text-blue-500">FIT</span>
                     </h1>
-                    <p className="text-xs text-slate-400 mt-1 uppercase tracking-wider">Admin Portal</p>
+                    <p className="text-xs text-slate-400 mt-1 uppercase tracking-wider">Trainer Portal</p>
                 </div>
 
                 <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
@@ -49,15 +47,14 @@ export default function AdminLayout() {
                 </nav>
 
                 <div className="p-4 border-t border-slate-800">
-                    <button onClick={handleLogout} className="w-full flex items-center px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
-                        <span className="mr-3">🚪</span> Logout
+                    <button onClick={handleLogout} className="w-full flex items-center justify-center space-x-2 p-3 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg font-bold transition-colors">
+                        <span>🚪</span><span>Logout</span>
                     </button>
                 </div>
             </aside>
 
-            {/* Dynamic Content Area */}
-            <main className="flex-1 overflow-y-auto">
-                {/* The <Outlet /> renders whatever sub-page is currently active in the router */}
+            {/* Main Content Area */}
+            <main className="flex-1 overflow-y-auto w-full">
                 <Outlet />
             </main>
         </div>

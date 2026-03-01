@@ -58,4 +58,23 @@ public class EmailServiceImpl implements EmailService {
         message.setText(emailBody);
         mailSender.send(message);
     }
+
+    @Override
+    public void sendStaffWelcomeEmail(String toEmail, String firstName, String tempPassword) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(toEmail);
+        message.setSubject("Welcome! Your Staff Account at Enterprise Gym");
+
+        String emailBody = "Hello " + firstName + ",\n\n" +
+                "A staff account has been created for you at Enterprise Gym.\n\n" +
+                "Your temporary password is: " + tempPassword + "\n\n" +
+                "Please log in and update your details at:\n" +
+                "http://localhost:5173/staff/login\n\n" +
+                "Best regards,\n" +
+                "Enterprise Gym Administration";
+
+        message.setText(emailBody);
+        mailSender.send(message);
+    }
 }

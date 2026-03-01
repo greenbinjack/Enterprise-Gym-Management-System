@@ -1,91 +1,135 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 export default function AdminScheduleBuilder() {
-    const [step, setStep] = useState(1);
-    const [existingClasses, setExistingClasses] = useState([]);
+    const [existingPlans, setExistingPlans] = useState([]);
+    const [availableRooms, setAvailableRooms] = useState([]);
+    const [availableTrainers, setAvailableTrainers] = useState([]);
     const [status, setStatus] = useState({ type: '', text: '' });
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Form States
-    const [timeData, setTimeData] = useState({ name: '', dayOfWeek: 'MONDAY', time: '18:00', duration: 60, weeks: 4 });
-    const [availableData, setAvailableData] = useState({ rooms: [], trainers: [] });
-    const [resourceData, setResourceData] = useState({ roomId: '', trainerId: '', classSeats: '' });
+    // UI State
+    const [step, setStep] = useState(1);
+    const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
 
-    // Calendar States
-    const today = new Date();
-    const [currentMonthDate, setCurrentMonthDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+    // Form State
+    const [planData, setPlanData] = useState({
+        name: '',
+        description: '',
+        category: 'GENERAL',
+        monthlyPrice: '',
+        discountLevel: 0,
+        recurringDayOfWeek: 'MONDAY',
+        recurringStartTime: '',
+        durationMinutes: 60,
+        allocatedRoomId: '',
+        allocatedSeats: '',
+        trainerIds: []
+    });
 
-    useEffect(() => { fetchExistingClasses(); }, []);
+    const navigate = useNavigate();
 
-    const fetchExistingClasses = async () => {
-        const res = await axios.get('http://localhost:8080/api/scheduling/classes');
-        setExistingClasses(res.data);
+    useEffect(() => {
+        const userStr = localStorage.getItem('user');
+        const user = userStr ? JSON.parse(userStr) : null;
+        if (!user || user.role !== 'ADMIN') {
+            navigate('/dashboard');
+        } else {
+            fetchPlans();
+        }
+    }, [navigate]);
+
+    const fetchPlans = async () => {
+        try {
+            const plansRes = await axios.get('http://localhost:8080/api/membership-plans');
+            setExistingPlans(plansRes.data || []);
+        } catch (error) {
+            console.error("Failed to fetch plans", error);
+        }
     };
 
-    // --- FORM LOGIC ---
+    const handleTrainerToggle = (trainerId) => {
+        setPlanData(prev => {
+            const currentIds = prev.trainerIds;
+            if (currentIds.includes(trainerId)) {
+                return { ...prev, trainerIds: currentIds.filter(id => id !== trainerId) };
+            } else {
+                return { ...prev, trainerIds: [...currentIds, trainerId] };
+            }
+        });
+    };
+
     const handleCheckAvailability = async (e) => {
         e.preventDefault();
         setStatus({ type: '', text: '' });
+        setIsCheckingAvailability(true);
+
         try {
-            const res = await axios.post('http://localhost:8080/api/scheduling/admin/check-availability', timeData);
-            setAvailableData(res.data);
-            if (res.data.rooms.length === 0 || res.data.trainers.length === 0) {
-                setStatus({ type: 'error', text: 'No rooms or trainers are available for this entire time block.' });
-                return;
-            }
-            setResourceData({ roomId: res.data.rooms[0].id, trainerId: res.data.trainers[0].id, classSeats: 1 });
-            setStep(2);
-        } catch (error) { setStatus({ type: 'error', text: 'Failed to calculate availability.' }); }
+            // Check availability for the next 52 weeks implicitly for recurring indefinitely
+            const res = await axios.post('http://localhost:8080/api/scheduling/admin/check-availability', {
+                dayOfWeek: planData.recurringDayOfWeek,
+                time: planData.recurringStartTime,
+                duration: planData.durationMinutes,
+                weeks: 52
+            });
+
+            setAvailableRooms(res.data.rooms || []);
+            setAvailableTrainers(res.data.trainers || []);
+            setStep(2); // Move to allocation step
+        } catch (error) {
+            setStatus({ type: 'error', text: error.response?.data?.error || 'Failed to check availability.' });
+        } finally {
+            setIsCheckingAvailability(false);
+        }
     };
 
-    const handleSubmitBundle = async (e) => {
+    const handleSubmitPlan = async (e) => {
         e.preventDefault();
-        const selectedRoom = availableData.rooms.find(r => r.id === resourceData.roomId);
-        if (resourceData.classSeats > selectedRoom.remainingCapacity) {
-            setStatus({ type: 'error', text: `You requested ${resourceData.classSeats} seats, but only ${selectedRoom.remainingCapacity} are available.` });
+
+        if (!planData.allocatedRoomId) {
+            setStatus({ type: 'error', text: 'You must allocate a room.' });
             return;
         }
+
+        setStatus({ type: '', text: '' });
+        setIsSubmitting(true);
         try {
-            const res = await axios.post('http://localhost:8080/api/scheduling/admin/bundle', { ...timeData, ...resourceData });
-            setStatus({ type: 'success', text: res.data.message });
+            const res = await axios.post('http://localhost:8080/api/membership-plans', planData);
+            setStatus({ type: 'success', text: res.data.message || 'Membership Plan created successfully!' });
+
+            // Reset form
+            setPlanData({
+                name: '',
+                description: '',
+                category: 'GENERAL',
+                monthlyPrice: '',
+                discountLevel: 0,
+                recurringDayOfWeek: 'MONDAY',
+                recurringStartTime: '',
+                durationMinutes: 60,
+                allocatedRoomId: '',
+                allocatedSeats: '',
+                trainerIds: []
+            });
             setStep(1);
-            setTimeData({ name: '', dayOfWeek: 'MONDAY', time: '18:00', duration: 60, weeks: 4 });
-            fetchExistingClasses();
-        } catch (error) { setStatus({ type: 'error', text: error.response?.data?.error || 'Validation failed.' }); }
+            fetchPlans();
+        } catch (error) {
+            setStatus({ type: 'error', text: error.response?.data?.error || 'Validation failed.' });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
-
-    // --- CALENDAR LOGIC ---
-    const daysInMonth = new Date(currentMonthDate.getFullYear(), currentMonthDate.getMonth() + 1, 0).getDate();
-    const firstDayIndex = currentMonthDate.getDay(); // 0 = Sun, 1 = Mon...
-
-    const prevMonth = () => setCurrentMonthDate(new Date(currentMonthDate.getFullYear(), currentMonthDate.getMonth() - 1, 1));
-    const nextMonth = () => setCurrentMonthDate(new Date(currentMonthDate.getFullYear(), currentMonthDate.getMonth() + 1, 1));
-
-    // Group classes by Date string (YYYY-MM-DD) for instant calendar lookups
-    // Group classes using strict LOCAL time to avoid UTC timezone shifts!
-    const classesByDate = existingClasses.reduce((acc, cls) => {
-        const d = new Date(cls.startTime);
-        // Force Javascript to use your local browser timezone for the YYYY-MM-DD string
-        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-
-        if (!acc[dateStr]) acc[dateStr] = [];
-        acc[dateStr].push(cls);
-        return acc;
-    }, {});
-
-    const days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
-    const calendarHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     return (
         <div className="p-8 min-h-screen bg-gray-50">
             <div className="mb-8">
-                <h2 className="text-3xl font-extrabold text-gray-900">Master Schedule Builder</h2>
-                <p className="text-gray-500 mt-1">Create class bundles and monitor facility capacity in real-time.</p>
+                <h2 className="text-3xl font-extrabold text-gray-900">Membership Plan Creator</h2>
+                <p className="text-gray-500 mt-1">Design new membership plans, define schedules, and allocate resources.</p>
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-12">
-
-                {/* LEFT COLUMN: The Schedule Form */}
+                {/* LEFT COLUMN: The Form */}
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden h-fit">
                     {status.type && (
                         <div className={`p-4 font-bold border-b ${status.type === 'error' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
@@ -93,103 +137,206 @@ export default function AdminScheduleBuilder() {
                         </div>
                     )}
 
+                    {/* Step indicator */}
+                    <div className="flex border-b bg-gray-50">
+                        <div className={`flex-1 p-4 text-center font-bold ${step === 1 ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400'}`}>
+                            1. Define Plan
+                        </div>
+                        <div className={`flex-1 p-4 text-center font-bold ${step === 2 ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400'}`}>
+                            2. Allocate Resources
+                        </div>
+                    </div>
+
                     {step === 1 ? (
                         <form onSubmit={handleCheckAvailability} className="p-6 space-y-6">
-                            <h3 className="text-lg font-bold border-b pb-2">Step 1: Define Schedule</h3>
+                            <h3 className="text-lg font-bold border-b pb-2">Plan Details</h3>
                             <div className="grid grid-cols-2 gap-4">
-                                <div><label className="block text-sm font-medium text-gray-700">Class Name</label><input type="text" value={timeData.name} onChange={e => setTimeData({ ...timeData, name: e.target.value })} className="w-full mt-1 p-2 border rounded" required /></div>
-                                <div><label className="block text-sm font-medium text-gray-700">Day</label><select value={timeData.dayOfWeek} onChange={e => setTimeData({ ...timeData, dayOfWeek: e.target.value })} className="w-full mt-1 p-2 border rounded">{days.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
-                                <div><label className="block text-sm font-medium text-gray-700">Time</label><input type="time" value={timeData.time} onChange={e => setTimeData({ ...timeData, time: e.target.value })} className="w-full mt-1 p-2 border rounded" required /></div>
-                                <div><label className="block text-sm font-medium text-gray-700">Duration (Min)</label><input type="number" value={timeData.duration} onChange={e => setTimeData({ ...timeData, duration: parseInt(e.target.value) })} className="w-full mt-1 p-2 border rounded" required /></div>
-                                <div className="col-span-2"><label className="block text-sm font-medium text-gray-700">Repeat (Weeks)</label><input type="number" value={timeData.weeks} onChange={e => setTimeData({ ...timeData, weeks: parseInt(e.target.value) })} min="1" max="52" className="w-full mt-1 p-2 border rounded" required /></div>
+                                <div className="col-span-2">
+                                    <label className="block text-sm font-medium text-gray-700">Plan Name</label>
+                                    <input type="text" value={planData.name} onChange={e => setPlanData({ ...planData, name: e.target.value })} className="w-full mt-1 p-2 border rounded" required placeholder="e.g. Premium Gold" />
+                                </div>
+
+                                <div className="col-span-2">
+                                    <label className="block text-sm font-medium text-gray-700">Description</label>
+                                    <textarea value={planData.description} onChange={e => setPlanData({ ...planData, description: e.target.value })} className="w-full mt-1 p-2 border rounded" required rows="3" placeholder="Describe the benefits of this plan..."></textarea>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Category</label>
+                                    <input type="text" value={planData.category} onChange={e => setPlanData({ ...planData, category: e.target.value })} className="w-full mt-1 p-2 border rounded" required />
+                                </div>
+                                <div className="col-span-2 lg:col-span-1"></div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Monthly Price ($)</label>
+                                    <input type="number" step="0.01" value={planData.monthlyPrice} onChange={e => setPlanData({ ...planData, monthlyPrice: parseFloat(e.target.value) || '' })} className="w-full mt-1 p-2 border rounded" required />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Yearly Discount (%)</label>
+                                    <input type="number" value={planData.discountLevel} onChange={e => setPlanData({ ...planData, discountLevel: parseInt(e.target.value) || 0 })} className="w-full mt-1 p-2 border rounded" required min="0" max="100" />
+                                </div>
+
+                                <h3 className="text-lg font-bold border-b pb-2 col-span-2 mt-4">Recurring Class Schedule</h3>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Day of Week</label>
+                                    <select value={planData.recurringDayOfWeek} onChange={e => setPlanData({ ...planData, recurringDayOfWeek: e.target.value })} className="w-full mt-1 p-2 border rounded" required>
+                                        <option value="MONDAY">Monday</option>
+                                        <option value="TUESDAY">Tuesday</option>
+                                        <option value="WEDNESDAY">Wednesday</option>
+                                        <option value="THURSDAY">Thursday</option>
+                                        <option value="FRIDAY">Friday</option>
+                                        <option value="SATURDAY">Saturday</option>
+                                        <option value="SUNDAY">Sunday</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Start Time</label>
+                                    <input type="time" value={planData.recurringStartTime} onChange={e => setPlanData({ ...planData, recurringStartTime: e.target.value })} className="w-full mt-1 p-2 border rounded" required />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Duration (Minutes)</label>
+                                    <input type="number" value={planData.durationMinutes} onChange={e => setPlanData({ ...planData, durationMinutes: parseInt(e.target.value) || 60 })} className="w-full mt-1 p-2 border rounded" required min="15" />
+                                </div>
                             </div>
-                            <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700">Check Database Availability ➔</button>
+                            <button type="submit" disabled={isCheckingAvailability} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors mt-6">
+                                {isCheckingAvailability ? 'Checking Availability...' : 'Continue to Resource Allocation ➔'}
+                            </button>
                         </form>
                     ) : (
-                        <form onSubmit={handleSubmitBundle} className="p-6 space-y-6">
+                        <form onSubmit={handleSubmitPlan} className="p-6 space-y-6">
                             <div className="flex justify-between items-center border-b pb-2">
-                                <h3 className="text-lg font-bold">Step 2: Assign Resources</h3>
-                                <button type="button" onClick={() => setStep(1)} className="text-sm text-gray-500 hover:text-gray-800">⬅ Back</button>
+                                <h3 className="text-lg font-bold">Resource Allocation</h3>
+                                <button type="button" onClick={() => setStep(1)} className="text-sm text-blue-600 hover:text-blue-800 font-semibold">
+                                    ← Back
+                                </button>
                             </div>
+
+                            <div className="bg-indigo-50 border border-indigo-100 text-indigo-800 p-4 rounded-lg text-sm mb-6">
+                                <strong>Schedule:</strong> Recurs every {planData.recurringDayOfWeek} at {planData.recurringStartTime} for {planData.durationMinutes} mins.
+                            </div>
+
                             <div className="space-y-4">
-                                <div><label className="block text-sm font-medium text-gray-700">Available Rooms</label><select value={resourceData.roomId} onChange={e => setResourceData({ ...resourceData, roomId: e.target.value })} className="w-full mt-1 p-2 border rounded">{availableData.rooms.map(r => <option key={r.id} value={r.id}>{r.name} ({r.remainingCapacity} seats left)</option>)}</select></div>
-                                <div><label className="block text-sm font-medium text-gray-700">Available Trainers</label><select value={resourceData.trainerId} onChange={e => setResourceData({ ...resourceData, trainerId: e.target.value })} className="w-full mt-1 p-2 border rounded">{availableData.trainers.map(t => <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>)}</select></div>
-                                <div><label className="block text-sm font-medium text-gray-700">Requested Seats</label><input type="number" value={resourceData.classSeats} onChange={e => setResourceData({ ...resourceData, classSeats: parseInt(e.target.value) })} min="1" className="w-full mt-1 p-2 border rounded bg-yellow-50" required /></div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Select Room</label>
+                                    <select value={planData.allocatedRoomId} onChange={e => setPlanData({ ...planData, allocatedRoomId: e.target.value })} className="w-full p-2 border rounded" required>
+                                        <option value="" disabled>Choose an available room...</option>
+                                        {availableRooms.map(r => (
+                                            <option key={r.id} value={r.id}>
+                                                {r.name} (Capacity: {r.remainingCapacity} available)
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {availableRooms.length === 0 && <p className="text-red-500 text-xs mt-1">No rooms available for this time slot.</p>}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Allocated Seats for Plan</label>
+                                    <input type="number" value={planData.allocatedSeats} onChange={e => setPlanData({ ...planData, allocatedSeats: parseInt(e.target.value) || '' })} className="w-full p-2 border rounded" required min="1" placeholder="Max seats allowed for this plan" />
+                                </div>
+
+                                <div className="pt-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Assign Trainers (Optional)</label>
+                                    <div className="border rounded p-3 max-h-48 overflow-y-auto bg-gray-50 space-y-2">
+                                        {availableTrainers.length > 0 ? (
+                                            availableTrainers.map(t => (
+                                                <div key={t.id} className="flex items-center space-x-3">
+                                                    <input
+                                                        type="checkbox"
+                                                        id={`trainer-${t.id}`}
+                                                        checked={planData.trainerIds.includes(t.id)}
+                                                        onChange={() => handleTrainerToggle(t.id)}
+                                                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                                    />
+                                                    <label htmlFor={`trainer-${t.id}`} className="text-sm font-medium text-gray-700 cursor-pointer">
+                                                        {t.firstName} {t.lastName}
+                                                    </label>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-sm text-gray-500 italic">No trainers available for this time slot.</p>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
-                            <button type="submit" className="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700">Confirm & Generate Bundle</button>
+
+                            <button type="submit" disabled={isSubmitting || availableRooms.length === 0} className="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors mt-6">
+                                {isSubmitting ? 'Finalizing Plan...' : '✓ Create Membership Plan'}
+                            </button>
                         </form>
                     )}
                 </div>
 
-                {/* RIGHT COLUMN: The Interactive Calendar */}
-                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 h-fit flex flex-col">
+                {/* RIGHT COLUMN: The Plan List */}
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 h-fit max-h-[800px] flex flex-col">
                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-xl font-bold text-gray-900">
-                            {currentMonthDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                        </h3>
-                        <div className="flex space-x-2">
-                            <button onClick={prevMonth} className="p-2 rounded bg-gray-100 hover:bg-gray-200">⬅</button>
-                            <button onClick={nextMonth} className="p-2 rounded bg-gray-100 hover:bg-gray-200">➡</button>
-                        </div>
+                        <h3 className="text-xl font-bold text-gray-900">Current Plans</h3>
+                        <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">{existingPlans.length} Total</span>
                     </div>
 
-                    <div className="grid grid-cols-7 gap-2 text-center mb-2">
-                        {calendarHeaders.map(day => <div key={day} className="text-xs font-bold text-gray-400 uppercase tracking-wider">{day}</div>)}
-                    </div>
+                    <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
+                        {existingPlans.length > 0 ? (
+                            existingPlans.map(plan => {
+                                // Calculate Yearly display price based on monthly + discount (for display purposes if Backend doesn't send it directly)
+                                const monthly = parseFloat(plan.monthlyPrice) || 0;
+                                const discount = plan.discountLevel || 0;
+                                const yearlyRaw = (monthly * 12) * (1 - (discount / 100));
+                                const yearlyFormatted = yearlyRaw.toFixed(2);
 
-                    <div className="grid grid-cols-7 gap-2 flex-1">
-                        {/* Empty padding for the first day of the month */}
-                        {[...Array(firstDayIndex)].map((_, i) => <div key={`empty-${i}`} className="p-2"></div>)}
-
-                        {/* Actual Days */}
-                        {[...Array(daysInMonth)].map((_, i) => {
-                            const dayNum = i + 1;
-                            // Format current calendar cell to YYYY-MM-DD to check against our grouped classes
-                            const cellDateStr = `${currentMonthDate.getFullYear()}-${String(currentMonthDate.getMonth() + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-                            const classesOnThisDay = classesByDate[cellDateStr] || [];
-
-                            return (
-                                <div key={dayNum} className="relative group flex flex-col items-center justify-center p-2 h-14 rounded-lg border border-transparent hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-colors">
-                                    <span className={`text-sm font-medium ${classesOnThisDay.length > 0 ? 'text-blue-900 font-bold' : 'text-gray-600'}`}>{dayNum}</span>
-
-                                    {/* Indicator Dots */}
-                                    <div className="flex space-x-1 mt-1">
-                                        {classesOnThisDay.slice(0, 3).map((_, idx) => (
-                                            <div key={idx} className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                                        ))}
-                                        {classesOnThisDay.length > 3 && <span className="text-[8px] leading-none text-blue-500 font-bold">+</span>}
-                                    </div>
-
-                                    {/* THE HOVER TOOLTIP */}
-                                    {classesOnThisDay.length > 0 && (
-                                        <div className="absolute z-50 bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-4 bg-gray-900 text-white text-left rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                            <p className="font-bold text-blue-300 border-b border-gray-700 pb-2 mb-2 text-sm">{new Date(cellDateStr).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}</p>
-                                            <div className="space-y-3 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
-                                                {classesOnThisDay.map(cls => {
-                                                    const start = new Date(cls.startTime);
-                                                    const end = new Date(cls.endTime);
-                                                    const duration = (end - start) / 60000;
-                                                    return (
-                                                        <div key={cls.id} className="bg-gray-800 p-2 rounded border border-gray-700">
-                                                            <p className="font-bold text-xs">{cls.name}</p>
-                                                            <p className="text-[10px] text-gray-400 mt-1">🕒 {start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({duration} mins)</p>
-                                                            <p className="text-[10px] text-gray-400">👤 {cls.trainer.firstName} {cls.trainer.lastName}</p>
-                                                            <p className="text-[10px] text-gray-400">📍 {cls.room.name}</p>
-                                                        </div>
-                                                    )
-                                                })}
+                                return (
+                                    <div key={plan.id} className="border border-gray-100 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-white to-gray-50">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <h4 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                                                    {plan.name}
+                                                </h4>
+                                                <p className="text-xs text-gray-500 font-medium tracking-wide uppercase mt-1">{plan.category}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-lg font-extrabold text-gray-900">${plan.monthlyPrice}<span className="text-xs text-gray-500 font-normal">/mo</span></p>
+                                                <p className="text-xs text-gray-500">${yearlyFormatted}/yr <span className="text-green-600 font-bold ml-1">({discount}% OFF)</span></p>
                                             </div>
                                         </div>
-                                    )}
-                                </div>
-                            );
-                        })}
+
+                                        <p className="text-sm text-gray-600 mb-4 bg-white p-3 rounded border border-gray-50 leading-relaxed">
+                                            {plan.description || "No description provided."}
+                                        </p>
+
+                                        <div className="text-xs text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100 mb-3 space-y-1">
+                                            <div className="flex items-center gap-2">
+                                                🗓 <span className="font-semibold">Recurs {plan.recurringDayOfWeek} at {plan.recurringStartTime}</span> ({plan.durationMinutes} mins)
+                                            </div>
+                                            <div className="flex items-center gap-2 text-indigo-700">
+                                                🪑 <span className="font-semibold">{plan.allocatedSeats}</span> Seats Allocated
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <h5 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Assigned Trainers ({plan.trainers?.length || 0})</h5>
+                                            <div className="flex flex-wrap gap-2">
+                                                {plan.trainers && plan.trainers.length > 0 ? (
+                                                    plan.trainers.map(t => (
+                                                        <span key={t.id} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                                                            👤 {t.firstName} {t.lastName}
+                                                        </span>
+                                                    ))
+                                                ) : (
+                                                    <span className="text-xs text-gray-400 italic">None assigned</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <div className="text-center py-12 flex flex-col items-center justify-center h-full">
+                                <div className="text-gray-300 mb-3 text-5xl">📋</div>
+                                <p className="text-gray-500 font-medium">No membership plans have been created yet.</p>
+                                <p className="text-sm text-gray-400 mt-1">Use the form to create your first plan.</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
-
-            {/* Existing Classes List (Optional now, but good for table view!) */}
-            {/* ... keeping your existing table down here ... */}
         </div>
     );
 }

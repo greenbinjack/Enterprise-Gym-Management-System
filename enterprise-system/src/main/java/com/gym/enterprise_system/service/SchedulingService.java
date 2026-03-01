@@ -4,17 +4,21 @@ import java.util.Map;
 import java.util.UUID;
 
 public interface SchedulingService {
-    void createAdminClass(UUID roomId, UUID trainerId, String name, String startTime, String endTime, int maxCapacity,
-            int weeksToRepeat);
+        void createAdminClass(UUID roomId, UUID trainerId, String name, String startTime, String endTime,
+                        int maxCapacity,
+                        int weeksToRepeat);
 
-    String bookClass(UUID userId, UUID sessionId);
+        String bookClass(UUID userId, UUID sessionId);
 
-    void cancelClass(UUID userId, UUID sessionId);
+        void cancelClass(UUID userId, UUID sessionId);
 
-    void markAttendance(UUID trainerId, UUID sessionId, UUID memberId, String status);
+        void markAttendance(UUID trainerId, UUID sessionId, UUID memberId, String status);
 
-    Map<String, Object> getAvailableResources(String dayOfWeek, String timeStr, int durationMinutes, int weeks);
+        Map<String, Object> getAvailableResources(String dayOfWeek, String timeStr, int durationMinutes, int weeks);
 
-    void createClassBundle(String name, String dayOfWeek, String timeStr, int durationMinutes, int weeks, UUID roomId,
-            UUID trainerId, int classSeats);
+        void createClassBundle(String name, String dayOfWeek, String timeStr, int durationMinutes, int weeks,
+                        UUID roomId,
+                        UUID trainerId, int classSeats);
+
+        Map<String, Object> getTrainerDashboardData(UUID trainerId);
 }

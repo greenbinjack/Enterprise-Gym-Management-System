@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { Scanner } from '@yudiel/react-qr-scanner';
 
 export default function MemberDashboard() {
     const currentUser = JSON.parse(localStorage.getItem('user'));
@@ -8,13 +9,11 @@ export default function MemberDashboard() {
     // State Management
     const [user, setUser] = useState({ firstName: currentUser?.firstName || 'Member', isProfileComplete: true });
     const [activeSubscriptions, setActiveSubscriptions] = useState([]);
-    const [isScanning, setIsScanning] = useState(false);
+    const [isScanningMode, setIsScanningMode] = useState(false);
+    const [scanResult, setScanResult] = useState(null);
 
-    // Dummy schedule data (we will wire this to the real backend next!)
-    const [upcomingClasses] = useState([
-        { id: 1, name: 'HIIT Core', time: 'Today, 18:00', duration: 45, trainer: 'Sarah Connor', room: 'Studio A' },
-        { id: 2, name: 'Morning Yoga', time: 'Tomorrow, 07:00', duration: 60, trainer: 'David Goggins', room: 'Studio B' }
-    ]);
+    // Fetch real classes below
+    const [upcomingClasses, setUpcomingClasses] = useState([]);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
@@ -33,6 +32,10 @@ export default function MemberDashboard() {
                 const active = subRes.data.filter(sub => sub.status === 'ACTIVE' || sub.status === 'GRACE_PERIOD');
                 setActiveSubscriptions(active);
 
+                // 3. Fetch Scheduled Classes
+                const classRes = await axios.get(`http://localhost:8080/api/scheduling/member/${currentUser.id}/bookings`);
+                setUpcomingClasses(classRes.data);
+
             } catch (error) {
                 console.error("Failed to load dashboard data", error);
             }
@@ -45,12 +48,34 @@ export default function MemberDashboard() {
     const hasAnyActivePlan = activeSubscriptions.length > 0;
     const accessStatus = hasAnyActivePlan ? 'ACTIVE' : 'NO ACCESS';
 
-    const handleSimulateScan = () => {
-        setIsScanning(true);
-        setTimeout(() => {
-            setIsScanning(false);
-            alert("✅ Check-in recorded successfully!");
-        }, 1500);
+    const handleCameraScan = async (scannedText) => {
+        // Prevent barrage of scans while processing
+        if (scanResult) return;
+
+        try {
+            const res = await axios.post('http://localhost:8080/api/checkin/scan', {
+                userId: currentUser.id,
+                locationId: scannedText
+            });
+
+            setScanResult({
+                type: 'success',
+                message: res.data.message,
+                status: res.data.status // ENTER or EXIT
+            });
+
+        } catch (error) {
+            setScanResult({
+                type: 'error',
+                message: error.response?.data?.error || "Invalid QR Code."
+            });
+        } finally {
+            // Re-open scanner after 5 seconds
+            setTimeout(() => {
+                setScanResult(null);
+                setIsScanningMode(false);
+            }, 5000);
+        }
     };
 
     return (
@@ -82,25 +107,64 @@ export default function MemberDashboard() {
                             STATUS: {accessStatus}
                         </div>
 
-                        <div className="bg-gray-50 p-6 rounded-xl border-2 border-dashed border-gray-300 mb-4 flex items-center justify-center">
-                            <span className="text-6xl">📱</span>
-                        </div>
+                        {/* Live Camera Scanner Logic */}
+                        {!isScanningMode && !scanResult ? (
+                            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-4 inline-block w-full">
+                                <div className="aspect-square bg-gray-50 rounded-lg flex flex-col items-center justify-center border-2 border-dashed border-gray-300 p-6 text-gray-500">
+                                    <span className="text-5xl mb-3">📍</span>
+                                    <h4 className="font-bold text-gray-800 mb-1">Pass Required</h4>
+                                    <p className="text-xs text-center">Scan the Front Desk QR code to log your visit.</p>
+                                </div>
+                            </div>
+                        ) : isScanningMode && !scanResult ? (
+                            <div className="bg-black p-2 rounded-xl border border-gray-200 shadow-sm mb-4 w-full aspect-square overflow-hidden relative">
+                                <Scanner
+                                    onScan={(detectedCodes) => {
+                                        if (detectedCodes && detectedCodes.length > 0) {
+                                            handleCameraScan(detectedCodes[0].rawValue);
+                                        }
+                                    }}
+                                    components={{
+                                        audio: false,
+                                        finder: false
+                                    }}
+                                    styles={{ container: { width: '100%', height: '100%' } }}
+                                />
+                                <div className="absolute inset-0 border-4 border-blue-500/50 rounded-xl pointer-events-none animate-pulse"></div>
+                                <button
+                                    onClick={() => setIsScanningMode(false)}
+                                    className="absolute top-4 right-4 bg-gray-900/80 text-white rounded-full p-2 hover:bg-red-500 transition-colors"
+                                >
+                                    ❌
+                                </button>
+                            </div>
+                        ) : null}
 
-                        <button
-                            onClick={handleSimulateScan}
-                            disabled={isScanning || !user.isProfileComplete || !hasAnyActivePlan}
-                            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center space-x-2"
-                        >
-                            {isScanning ? (
-                                <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
-                            ) : (
-                                <><span>📷</span> <span>Scan Front Desk QR</span></>
-                            )}
-                        </button>
-                        {!hasAnyActivePlan && user.isProfileComplete && (
-                            <p className="text-xs text-red-500 font-bold mt-3">You need an active plan to enter.</p>
+                        {scanResult && (
+                            <div className={`p-6 rounded-xl border-2 shadow-sm mb-4 w-full flex flex-col items-center justify-center aspect-square ${scanResult.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' :
+                                    scanResult.status === 'ENTER' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-blue-50 border-blue-200 text-blue-800'
+                                }`}>
+                                <span className="text-6xl mb-4">
+                                    {scanResult.type === 'error' ? '❌' : scanResult.status === 'ENTER' ? '👋' : '🏃'}
+                                </span>
+                                <h3 className="font-extrabold text-xl text-center leading-tight mb-2">{scanResult.message}</h3>
+                                {scanResult.type === 'success' && <p className="text-xs font-bold uppercase tracking-widest opacity-70">Logged {scanResult.status}</p>}
+                            </div>
                         )}
-                        <p className="text-xs text-gray-400 mt-3">Scan the code at the entrance to log your visit.</p>
+
+                        {!isScanningMode && !scanResult && (
+                            <button
+                                onClick={() => setIsScanningMode(true)}
+                                disabled={!user.isProfileComplete || !hasAnyActivePlan}
+                                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center space-x-2"
+                            >
+                                <><span>📷</span> <span>Open Camera Scanner</span></>
+                            </button>
+                        )}
+
+                        {!hasAnyActivePlan && user.isProfileComplete && (
+                            <p className="text-xs text-red-500 font-bold mt-3">You need an active plan to use the scanner.</p>
+                        )}
                     </div>
 
                     {/* Active Subscriptions Display */}
@@ -146,24 +210,35 @@ export default function MemberDashboard() {
                                 <Link to="/member/calendar" className="text-blue-600 font-bold hover:underline">Explore the calendar</Link>
                             </div>
                         ) : (
-                            upcomingClasses.map(cls => (
-                                <div key={cls.id} className="flex flex-col sm:flex-row justify-between sm:items-center p-4 rounded-xl border border-gray-100 bg-gray-50 hover:bg-blue-50 transition-colors">
-                                    <div className="flex items-start space-x-4">
-                                        <div className="bg-blue-100 text-blue-700 p-3 rounded-lg font-bold text-center leading-tight min-w-[60px]">
-                                            <div className="text-xs uppercase">MAR</div>
-                                            <div className="text-xl">03</div>
-                                        </div>
-                                        <div>
-                                            <h4 className="font-extrabold text-gray-900 text-lg">{cls.name}</h4>
-                                            <p className="text-sm text-gray-600 font-medium">🕒 {cls.time} ({cls.duration} min)</p>
-                                            <p className="text-xs text-gray-500 mt-1 font-medium">👤 {cls.trainer} &nbsp;|&nbsp; 📍 {cls.room}</p>
+                            upcomingClasses.map(cls => {
+                                const startDate = new Date(cls.startTime);
+                                const endDate = new Date(cls.endTime);
+                                const timeStr = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                    + " - " +
+                                    endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                                return (
+                                    <div key={cls.id} className="flex flex-col sm:flex-row justify-between sm:items-center p-4 rounded-xl border border-gray-100 bg-gray-50 hover:bg-blue-50 transition-colors">
+                                        <div className="flex items-start space-x-4">
+                                            <div className="bg-blue-100 text-blue-700 p-3 rounded-lg font-bold text-center leading-tight min-w-[60px]">
+                                                <div className="text-xs uppercase">{startDate.toLocaleString('default', { month: 'short' })}</div>
+                                                <div className="text-xl">{startDate.getDate()}</div>
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center space-x-2">
+                                                    <h4 className="font-extrabold text-gray-900 text-lg">{cls.name}</h4>
+                                                    <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded ${cls.status === 'WAITLISTED' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                                                        }`}>
+                                                        {cls.status}
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm text-gray-600 font-medium">🕒 {timeStr}</p>
+                                                <p className="text-xs text-gray-500 mt-1 font-medium">👤 {cls.trainer} &nbsp;|&nbsp; 📍 {cls.room}</p>
+                                            </div>
                                         </div>
                                     </div>
-                                    <button className="mt-4 sm:mt-0 px-4 py-2 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-sm font-bold transition-colors shadow-sm">
-                                        Cancel
-                                    </button>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
                 </div>

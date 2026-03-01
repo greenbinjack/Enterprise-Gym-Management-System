@@ -26,6 +26,7 @@ public class SchedulingServiceImpl implements SchedulingService {
     private final CheckInRepository checkInRepo;
     private final RoomRepository roomRepo;
     private final UserRepository userRepo;
+    private final MembershipPlanRepository planRepo;
     private final SubscriptionRepository subRepo; // Assuming you have this from Module 1
     private final NotificationRepository notifRepo;
 
@@ -75,14 +76,8 @@ public class SchedulingServiceImpl implements SchedulingService {
         Subscription activeSub = subRepo.findByUserIdAndStatus(userId, "ACTIVE")
                 .orElseThrow(() -> new IllegalArgumentException("Active subscription required."));
 
-        int classLimit = activeSub.getPlan().getClassLimitPerMonth();
-        if (classLimit != -1) { // -1 means Unlimited
-            int bookedThisMonth = bookingRepo.countEnrolledClassesForMonth(userId,
-                    session.getStartTime().getMonthValue(), session.getStartTime().getYear());
-            if (bookedThisMonth >= classLimit) {
-                throw new IllegalArgumentException("You have reached your monthly class limit for your current plan.");
-            }
-        }
+        // Removed class limit check since plans now have defined recurring schedules
+        // instead of monthly limits.
 
         ClassBooking booking = ClassBooking.builder()
                 .classSession(session)
@@ -176,6 +171,18 @@ public class SchedulingServiceImpl implements SchedulingService {
         DayOfWeek targetDay = DayOfWeek.valueOf(dayOfWeek.toUpperCase());
         LocalTime time = LocalTime.parse(timeStr);
 
+        // Find existing indefinite MembershipPlans that overlap this time
+        List<MembershipPlan> activePlans = planRepo.findByIsActiveTrueAndRecurringDayOfWeek(targetDay.name());
+        List<MembershipPlan> overlappingPlans = activePlans.stream()
+                .filter(p -> p.getRecurringStartTime() != null && p.getDurationMinutes() != null)
+                .filter(p -> {
+                    LocalTime planStart = LocalTime.parse(p.getRecurringStartTime());
+                    LocalTime planEnd = planStart.plusMinutes(p.getDurationMinutes());
+                    LocalTime reqEnd = time.plusMinutes(durationMinutes);
+                    return planStart.isBefore(reqEnd) && time.isBefore(planEnd);
+                })
+                .toList();
+
         // Find the FIRST occurrence of this day of the week
         LocalDate startDate = LocalDate.now();
         if (startDate.getDayOfWeek() != targetDay || LocalTime.now().isAfter(time)) {
@@ -194,11 +201,16 @@ public class SchedulingServiceImpl implements SchedulingService {
             int maxUsedCapacityAcrossWeeks = 0;
             boolean isRoomAvailableAllWeeks = true;
 
+            int planSeatsLocked = overlappingPlans.stream()
+                    .filter(p -> room.getId().equals(p.getAllocatedRoomId()))
+                    .mapToInt(p -> p.getAllocatedSeats() != null ? p.getAllocatedSeats() : 0)
+                    .sum();
+
             for (int i = 0; i < weeks; i++) {
                 LocalDateTime start = startDate.plusWeeks(i).atTime(time);
                 LocalDateTime end = start.plusMinutes(durationMinutes);
 
-                int usedCapacity = sessionRepo.getUsedCapacityForRoomAtTime(room.getId(), start, end);
+                int usedCapacity = sessionRepo.getUsedCapacityForRoomAtTime(room.getId(), start, end) + planSeatsLocked;
                 if (usedCapacity > maxUsedCapacityAcrossWeeks) {
                     maxUsedCapacityAcrossWeeks = usedCapacity;
                 }
@@ -221,6 +233,12 @@ public class SchedulingServiceImpl implements SchedulingService {
         final LocalDate finalStartDate = startDate;
         // Filter Trainers (Remove if they have ANY overlap in ANY of the weeks)
         availableTrainers.removeIf(trainer -> {
+            boolean busyWithPlan = overlappingPlans.stream()
+                    .anyMatch(p -> p.getTrainers().stream().anyMatch(t -> t.getId().equals(trainer.getId())));
+
+            if (busyWithPlan)
+                return true;
+
             for (int i = 0; i < weeks; i++) {
                 // Notice we use finalStartDate here now!
                 LocalDateTime start = finalStartDate.plusWeeks(i).atTime(time);
@@ -282,5 +300,23 @@ public class SchedulingServiceImpl implements SchedulingService {
             // Saves independently so they can be edited individually later!
             sessionRepo.save(session);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> getTrainerDashboardData(UUID trainerId) {
+        // 1. Fetch individual class sessions assigned to this trainer
+        List<ClassSession> individualSessions = sessionRepo.findAll().stream()
+                .filter(c -> c.getTrainer() != null && c.getTrainer().getId().equals(trainerId))
+                .toList();
+
+        // 2. Fetch all active membership plans that include this trainer
+        List<MembershipPlan> recurringPlans = planRepo.findByIsActiveTrue().stream()
+                .filter(p -> p.getTrainers().stream().anyMatch(t -> t.getId().equals(trainerId)))
+                .toList();
+
+        return Map.of(
+                "sessions", individualSessions,
+                "recurringPlans", recurringPlans);
     }
 }

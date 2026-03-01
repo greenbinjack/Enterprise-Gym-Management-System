@@ -24,7 +24,7 @@ export default function TrainerSchedule() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6 md:p-12">
+        <div className="bg-gray-50 py-8 px-4 sm:px-6 lg:px-8 flex-grow w-full min-h-full">
             <div className="max-w-5xl mx-auto">
                 <BackButton />
                 <h2 className="text-3xl font-extrabold text-gray-900 mb-8">My Teaching Schedule</h2>

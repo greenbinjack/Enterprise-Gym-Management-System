@@ -77,8 +77,15 @@ public class SubscriptionServiceImpl implements SubscriptionService { // ADD IMP
     @Override
     public List<PlanResponseDto> getAvailablePlansForUser(UUID userId) {
         return planRepository.findByIsActiveTrue().stream()
-                .map(p -> new PlanResponseDto(p.getId(), p.getName(), p.getTierLevel(), p.getMonthlyPrice(),
-                        p.getYearlyPrice(), p.getClassLimitPerMonth(), p.getPtSessionsPerMonth(), p.getCategory()))
+                .map(p -> {
+                    BigDecimal yearlyPrice = p.getMonthlyPrice().multiply(new BigDecimal(12));
+                    if (p.getDiscountLevel() != null && p.getDiscountLevel() > 0) {
+                        BigDecimal multiplier = new BigDecimal(100 - p.getDiscountLevel()).divide(new BigDecimal(100));
+                        yearlyPrice = yearlyPrice.multiply(multiplier);
+                    }
+                    return new PlanResponseDto(p.getId(), p.getName(), 1, p.getMonthlyPrice(),
+                            yearlyPrice, -1, 0, p.getCategory());
+                })
                 .collect(Collectors.toList());
     }
 
@@ -99,7 +106,14 @@ public class SubscriptionServiceImpl implements SubscriptionService { // ADD IMP
 
         MembershipPlan plan = planRepository.findById(request.planId()).orElseThrow();
         User user = userRepository.findById(request.userId()).orElseThrow();
-        BigDecimal amount = request.billingCycle().equals("YEARLY") ? plan.getYearlyPrice() : plan.getMonthlyPrice();
+
+        BigDecimal yearlyPriceTarget = plan.getMonthlyPrice().multiply(new BigDecimal(12));
+        if (plan.getDiscountLevel() != null && plan.getDiscountLevel() > 0) {
+            BigDecimal multiplier = new BigDecimal(100 - plan.getDiscountLevel()).divide(new BigDecimal(100));
+            yearlyPriceTarget = yearlyPriceTarget.multiply(multiplier);
+        }
+
+        BigDecimal amount = request.billingCycle().equals("YEARLY") ? yearlyPriceTarget : plan.getMonthlyPrice();
 
         // Generate a unique transaction ID
         String tranId = "GYM_" + UUID.randomUUID().toString().substring(0, 10).toUpperCase();

@@ -15,12 +15,15 @@ export default function Login() {
         try {
             const response = await axios.post('http://localhost:8080/api/auth/login', formData);
             localStorage.setItem('user', JSON.stringify(response.data));
+            localStorage.setItem('token', 'simulated-jwt-token-for-now');
+            localStorage.setItem('userRole', response.data.role);
+            localStorage.setItem('userId', response.data.id);
 
-            if (response.data.role === 'TRAINER') {
-                navigate('/trainer');
-            } else {
-                navigate('/member/dashboard');
-            }
+            const role = response.data.role;
+            if (role === 'ADMIN') navigate('/admin/dashboard');
+            else if (role === 'TRAINER') navigate('/trainer/dashboard');
+            else if (role === 'STAFF') navigate('/staff/dashboard');
+            else navigate('/member/dashboard');
         } catch (err) {
             setError(err.response?.data?.error || 'Invalid credentials');
         }
