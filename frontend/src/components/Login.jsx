@@ -38,7 +38,7 @@ export default function Login() {
         dark:bg-darkBg/50 dark:border-gray-800 dark:text-cream dark:focus:bg-darkCard dark:focus:border-lightSage dark:focus:ring-lightSage/10`;
 
     return (
-        <div className="flex justify-center items-center min-h-screen bg-cream dark:bg-darkBg transition-colors px-4 py-12 relative overflow-hidden">
+        <div className="flex justify-center items-center min-h-screen bg-cream dark:bg-darkBg transition-colors px-4 pt-32 pb-12 relative overflow-hidden">
             {/* Background decorative blobs */}
             <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-olive/10 dark:bg-lightSage/5 rounded-full filter blur-[120px] pointer-events-none"></div>
             <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-brown/10 dark:bg-olive/10 rounded-full filter blur-[100px] pointer-events-none animate-pulse"></div>
@@ -52,7 +52,7 @@ export default function Login() {
                         <div className="inline-flex py-1.5 px-4 rounded-full bg-white/80 dark:bg-darkCard/80 backdrop-blur-sm text-olive dark:text-lightSage text-sm font-bold border border-olive/20 dark:border-lightSage/20 mb-6 shadow-sm tracking-widest uppercase">
                             Welcome Back
                         </div>
-                        <h2 className="text-4xl font-black text-gray-900 dark:text-cream tracking-tighter mb-4">Sign into Enterprise</h2>
+                        <h2 className="text-4xl font-black text-gray-900 dark:text-cream tracking-tighter mb-4">Sign into Vortex</h2>
                         <p className="text-gray-500 dark:text-gray-400 text-lg">Enter your credentials to access your dashboard.</p>
                     </div>
 

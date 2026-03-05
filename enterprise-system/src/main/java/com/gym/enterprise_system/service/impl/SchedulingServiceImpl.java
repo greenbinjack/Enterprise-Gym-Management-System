@@ -167,138 +167,183 @@ public class SchedulingServiceImpl implements SchedulingService {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> getAvailableResources(String dayOfWeek, String timeStr, int durationMinutes, int weeks) {
-        DayOfWeek targetDay = DayOfWeek.valueOf(dayOfWeek.toUpperCase());
+    public Map<String, Object> getAvailableResources(List<String> daysOfWeek, String timeStr, int durationMinutes,
+            int weeks) {
         LocalTime time = LocalTime.parse(timeStr);
-
-        // Find existing indefinite MembershipPlans that overlap this time
-        List<MembershipPlan> activePlans = planRepo.findByIsActiveTrueAndRecurringDayOfWeek(targetDay.name());
-        List<MembershipPlan> overlappingPlans = activePlans.stream()
-                .filter(p -> p.getRecurringStartTime() != null && p.getDurationMinutes() != null)
-                .filter(p -> {
-                    LocalTime planStart = LocalTime.parse(p.getRecurringStartTime());
-                    LocalTime planEnd = planStart.plusMinutes(p.getDurationMinutes());
-                    LocalTime reqEnd = time.plusMinutes(durationMinutes);
-                    return planStart.isBefore(reqEnd) && time.isBefore(planEnd);
-                })
-                .toList();
-
-        // Find the FIRST occurrence of this day of the week
-        LocalDate startDate = LocalDate.now();
-        if (startDate.getDayOfWeek() != targetDay || LocalTime.now().isAfter(time)) {
-            startDate = startDate.with(TemporalAdjusters.next(targetDay));
-        }
 
         List<Room> allRooms = roomRepo.findAll();
         List<User> allTrainers = userRepo.findAll().stream()
                 .filter(u -> "TRAINER".equals(u.getRole().name()) && u.getIsActive()).toList();
 
-        List<Map<String, Object>> availableRooms = new ArrayList<>();
-        List<User> availableTrainers = new ArrayList<>(allTrainers);
+        List<Map<String, Object>> commonAvailableRooms = new ArrayList<>();
+        List<User> commonAvailableTrainers = new ArrayList<>(allTrainers);
 
-        // Filter Rooms based on capacity across ALL weeks
-        for (Room room : allRooms) {
-            int maxUsedCapacityAcrossWeeks = 0;
-            boolean isRoomAvailableAllWeeks = true;
+        boolean firstIteration = true;
 
-            int planSeatsLocked = overlappingPlans.stream()
-                    .filter(p -> room.getId().equals(p.getAllocatedRoomId()))
-                    .mapToInt(p -> p.getAllocatedSeats() != null ? p.getAllocatedSeats() : 0)
-                    .sum();
+        for (String dayOfWeek : daysOfWeek) {
+            DayOfWeek targetDay = DayOfWeek.valueOf(dayOfWeek.toUpperCase());
+
+            // Find existing indefinite MembershipPlans that overlap this time and day
+            List<MembershipPlan> activePlans = planRepo.findByIsActiveTrue();
+            List<MembershipPlan> overlappingPlans = activePlans.stream()
+                    .filter(p -> p.getRecurringDayOfWeek() != null
+                            && p.getRecurringDayOfWeek().contains(targetDay.name()))
+                    .filter(p -> p.getRecurringStartTime() != null && p.getDurationMinutes() != null)
+                    .filter(p -> {
+                        LocalTime planStart = LocalTime.parse(p.getRecurringStartTime());
+                        LocalTime planEnd = planStart.plusMinutes(p.getDurationMinutes());
+                        LocalTime reqEnd = time.plusMinutes(durationMinutes);
+                        return planStart.isBefore(reqEnd) && time.isBefore(planEnd);
+                    })
+                    .toList();
+
+            // Find the FIRST occurrence of this day of the week
+            LocalDate startDate = LocalDate.now();
+            if (startDate.getDayOfWeek() != targetDay || LocalTime.now().isAfter(time)) {
+                startDate = startDate.with(TemporalAdjusters.next(targetDay));
+            }
+
+            List<Map<String, Object>> availableRoomsForDay = new ArrayList<>();
+            List<User> availableTrainersForDay = new ArrayList<>(commonAvailableTrainers); // Filter from currently
+                                                                                           // remaining
+
+            // Filter Rooms based on capacity across ALL weeks for THIS day
+            for (Room room : allRooms) {
+                int maxUsedCapacityAcrossWeeks = 0;
+                boolean isRoomAvailableAllWeeks = true;
+
+                int planSeatsLocked = overlappingPlans.stream()
+                        .filter(p -> room.getId().equals(p.getAllocatedRoomId()))
+                        .mapToInt(p -> p.getAllocatedSeats() != null ? p.getAllocatedSeats() : 0)
+                        .sum();
+
+                for (int i = 0; i < weeks; i++) {
+                    LocalDateTime start = startDate.plusWeeks(i).atTime(time);
+                    LocalDateTime end = start.plusMinutes(durationMinutes);
+
+                    int usedCapacity = sessionRepo.getUsedCapacityForRoomAtTime(room.getId(), start, end)
+                            + planSeatsLocked;
+                    if (usedCapacity > maxUsedCapacityAcrossWeeks) {
+                        maxUsedCapacityAcrossWeeks = usedCapacity;
+                    }
+
+                    if (maxUsedCapacityAcrossWeeks >= room.getTotalCapacity()) {
+                        isRoomAvailableAllWeeks = false;
+                        break;
+                    }
+                }
+
+                if (isRoomAvailableAllWeeks) {
+                    availableRoomsForDay.add(Map.of(
+                            "id", room.getId(),
+                            "name", room.getName(),
+                            "totalCapacity", room.getTotalCapacity(),
+                            "remainingCapacity", room.getTotalCapacity() - maxUsedCapacityAcrossWeeks));
+                }
+            }
+
+            final LocalDate finalStartDate = startDate;
+            // Filter Trainers (Remove if they have ANY overlap in ANY of the weeks for THIS
+            // day)
+            availableTrainersForDay.removeIf(trainer -> {
+                boolean busyWithPlan = overlappingPlans.stream()
+                        .anyMatch(p -> p.getTrainers().stream().anyMatch(t -> t.getId().equals(trainer.getId())));
+
+                if (busyWithPlan)
+                    return true;
+
+                for (int i = 0; i < weeks; i++) {
+                    LocalDateTime start = finalStartDate.plusWeeks(i).atTime(time);
+                    LocalDateTime end = start.plusMinutes(durationMinutes);
+                    if (sessionRepo.countOverlappingTrainerClasses(trainer.getId(), start, end) > 0) {
+                        return true; // Remove trainer from list
+                    }
+                }
+                return false;
+            });
+
+            // Perform Intersection Logic
+            if (firstIteration) {
+                commonAvailableRooms = new ArrayList<>(availableRoomsForDay);
+                commonAvailableTrainers = new ArrayList<>(availableTrainersForDay);
+                firstIteration = false;
+            } else {
+                // Intersect Rooms (keep room if its ID exists in both, taking min remaining
+                // capacity)
+                List<Map<String, Object>> newCommonRooms = new ArrayList<>();
+                for (Map<String, Object> commonRoom : commonAvailableRooms) {
+                    UUID commonId = (UUID) commonRoom.get("id");
+                    for (Map<String, Object> dayRoom : availableRoomsForDay) {
+                        if (commonId.equals(dayRoom.get("id"))) {
+                            int r1 = (int) commonRoom.get("remainingCapacity");
+                            int r2 = (int) dayRoom.get("remainingCapacity");
+                            newCommonRooms.add(Map.of(
+                                    "id", commonId,
+                                    "name", commonRoom.get("name"),
+                                    "totalCapacity", commonRoom.get("totalCapacity"),
+                                    "remainingCapacity", Math.min(r1, r2)));
+                            break;
+                        }
+                    }
+                }
+                commonAvailableRooms = newCommonRooms;
+
+                // Intersect Trainers (just reference equality check is enough)
+                commonAvailableTrainers.retainAll(availableTrainersForDay);
+            }
+        }
+
+        return Map.of("rooms", commonAvailableRooms, "trainers", commonAvailableTrainers);
+    }
+
+    @Transactional
+    public void createClassBundle(String name, List<String> daysOfWeek, String timeStr, int durationMinutes, int weeks,
+            UUID roomId, UUID trainerId, int classSeats) {
+        LocalTime time = LocalTime.parse(timeStr);
+        Room room = roomRepo.findById(roomId).orElseThrow();
+        User trainer = userRepo.findById(trainerId).orElseThrow();
+        UUID recurringGroupId = weeks > 1 || daysOfWeek.size() > 1 ? UUID.randomUUID() : null;
+
+        for (String dayOfWeek : daysOfWeek) {
+            DayOfWeek targetDay = DayOfWeek.valueOf(dayOfWeek.toUpperCase());
+
+            LocalDate startDate = LocalDate.now();
+            if (startDate.getDayOfWeek() != targetDay
+                    || (startDate.getDayOfWeek() == targetDay && LocalTime.now().isAfter(time))) {
+                startDate = startDate.with(TemporalAdjusters.next(targetDay));
+            }
 
             for (int i = 0; i < weeks; i++) {
                 LocalDateTime start = startDate.plusWeeks(i).atTime(time);
                 LocalDateTime end = start.plusMinutes(durationMinutes);
 
-                int usedCapacity = sessionRepo.getUsedCapacityForRoomAtTime(room.getId(), start, end) + planSeatsLocked;
-                if (usedCapacity > maxUsedCapacityAcrossWeeks) {
-                    maxUsedCapacityAcrossWeeks = usedCapacity;
+                // STRICT BACKEND VALIDATION PER WEEK
+                if (start.isBefore(LocalDateTime.now()))
+                    throw new IllegalArgumentException("Cannot schedule classes in the past.");
+
+                if (sessionRepo.countOverlappingTrainerClasses(trainerId, start, end) > 0) {
+                    throw new IllegalArgumentException("Trainer conflict detected on " + start.toLocalDate());
                 }
 
-                if (maxUsedCapacityAcrossWeeks >= room.getTotalCapacity()) {
-                    isRoomAvailableAllWeeks = false;
-                    break;
+                int currentUsed = sessionRepo.getUsedCapacityForRoomAtTime(roomId, start, end);
+                if (currentUsed + classSeats > room.getTotalCapacity()) {
+                    throw new IllegalArgumentException("Capacity exceeded on " + start.toLocalDate() + ". Only "
+                            + (room.getTotalCapacity() - currentUsed) + " seats remain.");
                 }
+
+                ClassSession session = ClassSession.builder()
+                        .name(name)
+                        .room(room)
+                        .trainer(trainer)
+                        .startTime(start)
+                        .endTime(end)
+                        .maxCapacity(classSeats)
+                        .recurringGroupId(recurringGroupId)
+                        .build();
+
+                // Saves independently so they can be edited individually later!
+                sessionRepo.save(session);
             }
-
-            if (isRoomAvailableAllWeeks) {
-                availableRooms.add(Map.of(
-                        "id", room.getId(),
-                        "name", room.getName(),
-                        "totalCapacity", room.getTotalCapacity(),
-                        "remainingCapacity", room.getTotalCapacity() - maxUsedCapacityAcrossWeeks));
-            }
-        }
-
-        final LocalDate finalStartDate = startDate;
-        // Filter Trainers (Remove if they have ANY overlap in ANY of the weeks)
-        availableTrainers.removeIf(trainer -> {
-            boolean busyWithPlan = overlappingPlans.stream()
-                    .anyMatch(p -> p.getTrainers().stream().anyMatch(t -> t.getId().equals(trainer.getId())));
-
-            if (busyWithPlan)
-                return true;
-
-            for (int i = 0; i < weeks; i++) {
-                // Notice we use finalStartDate here now!
-                LocalDateTime start = finalStartDate.plusWeeks(i).atTime(time);
-                LocalDateTime end = start.plusMinutes(durationMinutes);
-                if (sessionRepo.countOverlappingTrainerClasses(trainer.getId(), start, end) > 0) {
-                    return true; // Remove trainer from list
-                }
-            }
-            return false;
-        });
-
-        return Map.of("rooms", availableRooms, "trainers", availableTrainers);
-    }
-
-    @Transactional
-    public void createClassBundle(String name, String dayOfWeek, String timeStr, int durationMinutes, int weeks,
-            UUID roomId, UUID trainerId, int classSeats) {
-        DayOfWeek targetDay = DayOfWeek.valueOf(dayOfWeek.toUpperCase());
-        LocalTime time = LocalTime.parse(timeStr);
-
-        LocalDate startDate = LocalDate.now();
-        if (startDate.getDayOfWeek() != targetDay
-                || (startDate.getDayOfWeek() == targetDay && LocalTime.now().isAfter(time))) {
-            startDate = startDate.with(TemporalAdjusters.next(targetDay));
-        }
-
-        Room room = roomRepo.findById(roomId).orElseThrow();
-        User trainer = userRepo.findById(trainerId).orElseThrow();
-        UUID recurringGroupId = weeks > 1 ? UUID.randomUUID() : null;
-
-        for (int i = 0; i < weeks; i++) {
-            LocalDateTime start = startDate.plusWeeks(i).atTime(time);
-            LocalDateTime end = start.plusMinutes(durationMinutes);
-
-            // STRICT BACKEND VALIDATION PER WEEK
-            if (start.isBefore(LocalDateTime.now()))
-                throw new IllegalArgumentException("Cannot schedule classes in the past.");
-
-            if (sessionRepo.countOverlappingTrainerClasses(trainerId, start, end) > 0) {
-                throw new IllegalArgumentException("Trainer conflict detected on " + start.toLocalDate());
-            }
-
-            int currentUsed = sessionRepo.getUsedCapacityForRoomAtTime(roomId, start, end);
-            if (currentUsed + classSeats > room.getTotalCapacity()) {
-                throw new IllegalArgumentException("Capacity exceeded on " + start.toLocalDate() + ". Only "
-                        + (room.getTotalCapacity() - currentUsed) + " seats remain.");
-            }
-
-            ClassSession session = ClassSession.builder()
-                    .name(name)
-                    .room(room)
-                    .trainer(trainer)
-                    .startTime(start)
-                    .endTime(end)
-                    .maxCapacity(classSeats)
-                    .recurringGroupId(recurringGroupId)
-                    .build();
-
-            // Saves independently so they can be edited individually later!
-            sessionRepo.save(session);
         }
     }
 
@@ -318,5 +363,10 @@ public class SchedulingServiceImpl implements SchedulingService {
         return Map.of(
                 "sessions", individualSessions,
                 "recurringPlans", recurringPlans);
+    }
+
+    @Override
+    public List<com.gym.enterprise_system.entity.Subscription> getUserSubscriptions(UUID userId) {
+        return subRepo.findAllByUserId(userId);
     }
 }

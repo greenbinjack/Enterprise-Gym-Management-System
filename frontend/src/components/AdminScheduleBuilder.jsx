@@ -17,10 +17,10 @@ export default function AdminScheduleBuilder() {
     const [planData, setPlanData] = useState({
         name: '',
         description: '',
-        category: 'GENERAL',
+        category: 'CLASS_PACKAGE',
         monthlyPrice: '',
         discountLevel: 0,
-        recurringDayOfWeek: 'MONDAY',
+        recurringDaysOfWeek: ['MONDAY'],
         recurringStartTime: '',
         durationMinutes: 60,
         allocatedRoomId: '',
@@ -68,7 +68,7 @@ export default function AdminScheduleBuilder() {
         try {
             // Check availability for the next 52 weeks implicitly for recurring indefinitely
             const res = await api.post('/api/scheduling/admin/check-availability', {
-                dayOfWeek: planData.recurringDayOfWeek,
+                daysOfWeek: planData.recurringDaysOfWeek,
                 time: planData.recurringStartTime,
                 duration: planData.durationMinutes,
                 weeks: 52
@@ -102,10 +102,10 @@ export default function AdminScheduleBuilder() {
             setPlanData({
                 name: '',
                 description: '',
-                category: 'GENERAL',
+                category: 'CLASS_PACKAGE',
                 monthlyPrice: '',
                 discountLevel: 0,
-                recurringDayOfWeek: 'MONDAY',
+                recurringDaysOfWeek: ['MONDAY'],
                 recurringStartTime: '',
                 durationMinutes: 60,
                 allocatedRoomId: '',
@@ -161,11 +161,7 @@ export default function AdminScheduleBuilder() {
                                     <textarea value={planData.description} onChange={e => setPlanData({ ...planData, description: e.target.value })} className="w-full mt-1 p-2 border rounded" required rows="3" placeholder="Describe the benefits of this plan..."></textarea>
                                 </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Category</label>
-                                    <input type="text" value={planData.category} onChange={e => setPlanData({ ...planData, category: e.target.value })} className="w-full mt-1 p-2 border rounded" required />
-                                </div>
-                                <div className="col-span-2 lg:col-span-1"></div>
+
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Monthly Price ($)</label>
@@ -178,16 +174,25 @@ export default function AdminScheduleBuilder() {
 
                                 <h3 className="text-lg font-bold border-b pb-2 col-span-2 mt-4">Recurring Class Schedule</h3>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Day of Week</label>
-                                    <select value={planData.recurringDayOfWeek} onChange={e => setPlanData({ ...planData, recurringDayOfWeek: e.target.value })} className="w-full mt-1 p-2 border rounded" required>
-                                        <option value="MONDAY">Monday</option>
-                                        <option value="TUESDAY">Tuesday</option>
-                                        <option value="WEDNESDAY">Wednesday</option>
-                                        <option value="THURSDAY">Thursday</option>
-                                        <option value="FRIDAY">Friday</option>
-                                        <option value="SATURDAY">Saturday</option>
-                                        <option value="SUNDAY">Sunday</option>
-                                    </select>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Days of Week</label>
+                                    <div className="grid grid-cols-2 gap-2 text-sm">
+                                        {['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'].map(day => (
+                                            <label key={day} className="flex items-center space-x-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={planData.recurringDaysOfWeek.includes(day)}
+                                                    onChange={(e) => {
+                                                        const current = planData.recurringDaysOfWeek;
+                                                        if (e.target.checked) setPlanData({ ...planData, recurringDaysOfWeek: [...current, day] });
+                                                        else setPlanData({ ...planData, recurringDaysOfWeek: current.filter(d => d !== day) });
+                                                    }}
+                                                    className="rounded text-blue-600 focus:ring-blue-500"
+                                                />
+                                                <span className="capitalize">{day.toLowerCase()}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                    {planData.recurringDaysOfWeek.length === 0 && <p className="text-red-500 text-xs mt-1">Please select at least one day.</p>}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Start Time</label>
@@ -198,7 +203,7 @@ export default function AdminScheduleBuilder() {
                                     <input type="number" value={planData.durationMinutes} onChange={e => setPlanData({ ...planData, durationMinutes: parseInt(e.target.value) || 60 })} className="w-full mt-1 p-2 border rounded" required min="15" />
                                 </div>
                             </div>
-                            <button type="submit" disabled={isCheckingAvailability} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors mt-6">
+                            <button type="submit" disabled={isCheckingAvailability || planData.recurringDaysOfWeek.length === 0} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors mt-6">
                                 {isCheckingAvailability ? 'Checking Availability...' : 'Continue to Resource Allocation ➔'}
                             </button>
                         </form>
@@ -212,7 +217,7 @@ export default function AdminScheduleBuilder() {
                             </div>
 
                             <div className="bg-indigo-50 border border-indigo-100 text-indigo-800 p-4 rounded-lg text-sm mb-6">
-                                <strong>Schedule:</strong> Recurs every {planData.recurringDayOfWeek} at {planData.recurringStartTime} for {planData.durationMinutes} mins.
+                                <strong>Schedule:</strong> Recurs every {planData.recurringDaysOfWeek.map(d => d.charAt(0) + d.slice(1).toLowerCase()).join(', ')} at {planData.recurringStartTime} for {planData.durationMinutes} mins.
                             </div>
 
                             <div className="space-y-4">
@@ -303,7 +308,7 @@ export default function AdminScheduleBuilder() {
 
                                         <div className="text-xs text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100 mb-3 space-y-1">
                                             <div className="flex items-center gap-2">
-                                                🗓 <span className="font-semibold">Recurs {plan.recurringDayOfWeek} at {plan.recurringStartTime}</span> ({plan.durationMinutes} mins)
+                                                🗓 <span className="font-semibold">Recurs {plan.recurringDayOfWeek ? plan.recurringDayOfWeek.split(',').map(d => d.charAt(0) + d.slice(1).toLowerCase()).join(', ') : 'TBD'} at {plan.recurringStartTime}</span> ({plan.durationMinutes} mins)
                                             </div>
                                             <div className="flex items-center gap-2 text-indigo-700">
                                                 🪑 <span className="font-semibold">{plan.allocatedSeats}</span> Seats Allocated

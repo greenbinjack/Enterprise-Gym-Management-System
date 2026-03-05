@@ -32,7 +32,7 @@ export default function Careers() {
         dark:bg-darkBg/50 dark:border-gray-800 dark:text-cream dark:focus:bg-darkCard dark:focus:border-lightSage dark:focus:ring-lightSage/10`;
 
     return (
-        <div className="min-h-screen bg-cream dark:bg-darkBg transition-colors py-12 px-4 sm:px-6 lg:px-12 relative overflow-hidden flex flex-col justify-center">
+        <div className="min-h-screen bg-cream dark:bg-darkBg transition-colors pt-32 pb-12 px-4 sm:px-6 lg:px-12 relative overflow-hidden flex flex-col justify-center">
             {/* Background decorative blobs */}
             <div className="absolute top-20 right-0 w-96 h-96 bg-olive/10 dark:bg-lightSage/5 rounded-full filter blur-[100px] pointer-events-none animate-pulse"></div>
             <div className="absolute bottom-10 left-0 w-[500px] h-[500px] bg-brown/5 dark:bg-olive/5 rounded-full filter blur-[120px] pointer-events-none"></div>
@@ -47,7 +47,7 @@ export default function Careers() {
                     </div>
                     <h2 className="text-5xl md:text-6xl font-black text-gray-900 dark:text-cream tracking-tighter mb-6">Join Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-olive to-brown dark:from-lightSage dark:to-cream">Elite Team.</span></h2>
                     <p className="mt-4 text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed font-medium">
-                        We're searching for passionate, uncompromising fitness professionals to elevate the Enterprise Gym experience.
+                        We're searching for passionate, uncompromising fitness professionals to elevate the Vortex experience.
                     </p>
                 </div>
 
@@ -128,7 +128,7 @@ export default function Careers() {
                 <div className="text-center">
                     <span className="text-gray-500 dark:text-gray-500 font-medium">Return to the  </span>
                     <Link to="/" className="text-olive dark:text-lightSage hover:underline font-bold transition-all underline-offset-4 decoration-2">
-                        Enterprise Homepage
+                        Vortex Homepage
                     </Link>
                 </div>
             </div>

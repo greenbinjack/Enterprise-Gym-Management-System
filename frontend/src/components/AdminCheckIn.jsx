@@ -20,7 +20,7 @@ export default function AdminCheckIn() {
 
     useEffect(() => {
         fetchActiveRoster();
-        const intervalId = setInterval(fetchActiveRoster, 5000); // 5s refresh
+        const intervalId = setInterval(fetchActiveRoster, 120000); // 2 min refresh
         inputRef.current?.focus(); // Keep focus on the scanner input
         return () => clearInterval(intervalId);
     }, []);

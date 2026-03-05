@@ -21,7 +21,7 @@ export default function StaffDashboard() {
 
     useEffect(() => {
         fetchActiveMembers();
-        const interval = setInterval(fetchActiveMembers, 10000); // 10s auto-refresh
+        const interval = setInterval(fetchActiveMembers, 120000); // 2 min auto-refresh
         return () => clearInterval(interval);
     }, []);
 
@@ -99,7 +99,7 @@ export default function StaffDashboard() {
                             </div>
                             <h3 className="text-gray-900 dark:text-cream font-black text-xl mb-2 tracking-tight">An Empty Floor</h3>
                             <p className="text-gray-500 dark:text-gray-400">There are no members currently checked in to the facility.</p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">The roster will update automatically every 10 seconds.</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">The roster will update automatically every 2 minutes.</p>
                         </div>
                     ) : (
                         <div className="overflow-x-auto w-full">

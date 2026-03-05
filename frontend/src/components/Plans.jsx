@@ -58,8 +58,16 @@ export default function Plans() {
         }
     };
 
+    const basePackages = gymPlans.filter(plan => plan.category === 'BASE_MEMBERSHIP');
+    const classwisePackages = gymPlans.filter(plan => plan.category === 'CLASS_PACKAGE');
+
+    const getYearlyPrice = (plan) => {
+        if (plan.yearlyPrice && plan.yearlyPrice > 0) return plan.yearlyPrice;
+        return plan.monthlyPrice * 12 * 0.85; // 15% discount
+    };
+
     return (
-        <div className="min-h-screen bg-cream dark:bg-darkBg transition-colors py-12 px-4 sm:px-6 lg:px-12 relative overflow-hidden">
+        <div className="min-h-screen bg-cream dark:bg-darkBg transition-colors pt-32 pb-12 px-4 sm:px-6 lg:px-12 relative overflow-hidden">
             {/* Background decorative blobs */}
             <div className="absolute top-0 -left-40 w-96 h-96 bg-lightSage/20 dark:bg-olive/5 rounded-full filter blur-[100px] pointer-events-none"></div>
             <div className="absolute bottom-0 -right-40 w-96 h-96 bg-brown/10 dark:bg-lightSage/5 rounded-full filter blur-[100px] pointer-events-none"></div>
@@ -92,89 +100,178 @@ export default function Plans() {
                         <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-olive dark:border-lightSage"></div>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 xl:gap-10">
-                        {gymPlans.sort((a, b) => a.monthlyPrice - b.monthlyPrice).map((plan) => {
-                            // Automatically assume the middle plan is the "Premium" popular choice
-                            const isPremium = plan.monthlyPrice > 5000 && plan.monthlyPrice < 15000;
-
-                            return (
-                                <div
-                                    key={plan.id}
-                                    className={`relative bg-white dark:bg-darkCard rounded-[2rem] shadow-xl transition-all duration-500 flex flex-col p-10
-                                        ${isPremium
-                                            ? 'border-2 border-olive dark:border-lightSage transform md:-translate-y-4 z-10 shadow-olive/10 dark:shadow-lightSage/5'
-                                            : 'border border-gray-100 dark:border-gray-800 hover:-translate-y-2 hover:shadow-2xl'
-                                        }`}
-                                >
-                                    {isPremium && (
-                                        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                                            <span className="bg-gradient-to-r from-olive to-brown text-white dark:from-lightSage dark:to-olive dark:text-darkBg text-xs font-black uppercase tracking-widest py-1.5 px-6 rounded-full shadow-lg border border-white/20">
-                                                Most Popular
-                                            </span>
-                                        </div>
-                                    )}
-
-                                    <h3 className="text-3xl font-black text-gray-900 dark:text-cream mb-4">{plan.name}</h3>
-
-                                    <div className="mb-8 flex items-baseline">
-                                        <span className="text-5xl font-black text-gray-900 dark:text-white tracking-tighter">
-                                            ৳{billingCycle === 'monthly' ? (plan.monthlyPrice || 0).toLocaleString() : (plan.yearlyPrice || 0).toLocaleString()}
-                                        </span>
-                                        <span className="text-gray-500 dark:text-gray-400 font-bold ml-2">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
-                                    </div>
-
-                                    <div className="w-full h-px bg-gradient-to-r from-gray-200 via-gray-300 to-transparent dark:from-gray-800 dark:via-gray-700 mb-8"></div>
-
-                                    <ul className="space-y-6 mb-12 flex-1">
-                                        <li className="flex items-start text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
-                                            <CheckIcon />
-                                            <span>
-                                                <strong className="text-gray-900 dark:text-white block">{plan.classLimitPerMonth === -1 ? 'Unlimited' : plan.classLimitPerMonth} Classes per Month</strong>
-                                                <span className="text-sm opacity-80">Access to all group sessions</span>
-                                            </span>
-                                        </li>
-                                        <li className="flex items-start text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
-                                            <CheckIcon />
-                                            <span>
-                                                <strong className="text-gray-900 dark:text-white block">{plan.ptSessionsPerMonth} PT Sessions</strong>
-                                                <span className="text-sm opacity-80">1-on-1 personalized training</span>
-                                            </span>
-                                        </li>
-                                        <li className="flex items-start text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
-                                            <CheckIcon />
-                                            <span>
-                                                <strong className="text-gray-900 dark:text-white block">Full Facility Access</strong>
-                                                <span className="text-sm opacity-80">24/7 gym floor entry</span>
-                                            </span>
-                                        </li>
-                                        {isPremium && (
-                                            <li className="flex items-start text-olive dark:text-lightSage font-bold leading-relaxed">
-                                                <CheckIcon />
-                                                <span>
-                                                    <span className="block">Premium Recovery Lounge</span>
-                                                    <span className="text-sm opacity-80 font-medium">Sauna & Massage therapy</span>
-                                                </span>
-                                            </li>
-                                        )}
-                                    </ul>
-
-                                    <button
-                                        onClick={() => handleSelectPlan(plan)}
-                                        disabled={isLoading}
-                                        className={`w-full py-4 rounded-xl font-black text-lg transition-all duration-300 shadow-md transform hover:-translate-y-1
-                                            ${isPremium
-                                                ? 'bg-olive text-white hover:bg-olive/90 hover:shadow-olive/30 dark:bg-lightSage dark:text-darkBg dark:hover:bg-cream dark:hover:shadow-lightSage/30'
-                                                : 'bg-gray-900 text-white hover:bg-black dark:bg-gray-800 dark:text-cream dark:hover:bg-gray-700 hover:shadow-xl'
-                                            }`}
-                                    >
-                                        {isLoading && loadingPlan === plan.id ? 'Processing...' : 'Select Plan'}
-                                    </button>
+                    <div className="space-y-24">
+                        {/* Base Packages Section */}
+                        {basePackages.length > 0 && (
+                            <div>
+                                <h3 className="text-3xl font-black text-gray-900 dark:text-cream text-center mb-12 uppercase tracking-tight">Base <span className="text-olive dark:text-lightSage">Packages</span></h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 xl:gap-10">
+                                    {basePackages.sort((a, b) => a.monthlyPrice - b.monthlyPrice).map((plan) => (
+                                        <PlanCard key={plan.id} plan={plan} billingCycle={billingCycle} isLoading={isLoading} loadingPlan={loadingPlan} handleSelectPlan={handleSelectPlan} getYearlyPrice={getYearlyPrice} />
+                                    ))}
                                 </div>
-                            );
-                        })}
+                            </div>
+                        )}
+
+                        {/* Classwise Packages Section */}
+                        {classwisePackages.length > 0 && (
+                            <div>
+                                <div className="w-full max-w-lg mx-auto h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent mb-16"></div>
+                                <h3 className="text-3xl font-black text-gray-900 dark:text-cream text-center mb-12 uppercase tracking-tight">Classwise <span className="text-olive dark:text-lightSage">Packages</span></h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 xl:gap-10">
+                                    {classwisePackages.sort((a, b) => a.monthlyPrice - b.monthlyPrice).map((plan) => (
+                                        <PlanCard key={plan.id} plan={plan} billingCycle={billingCycle} isLoading={isLoading} loadingPlan={loadingPlan} handleSelectPlan={handleSelectPlan} getYearlyPrice={getYearlyPrice} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
+        </div>
+    );
+}
+
+function PlanCard({ plan, billingCycle, isLoading, loadingPlan, handleSelectPlan, getYearlyPrice }) {
+    const isPremium = plan.monthlyPrice > 5000 && plan.monthlyPrice < 15000;
+    const priceDisplay = billingCycle === 'monthly' ? (plan.monthlyPrice || 0) : getYearlyPrice(plan);
+
+    return (
+        <div
+            className={`relative bg-white dark:bg-darkCard rounded-[2rem] shadow-xl transition-all duration-500 flex flex-col p-10
+                ${isPremium
+                    ? 'border-2 border-olive dark:border-lightSage transform md:-translate-y-4 z-10 shadow-olive/10 dark:shadow-lightSage/5'
+                    : 'border border-gray-100 dark:border-gray-800 hover:-translate-y-2 hover:shadow-2xl'
+                }`}
+        >
+            {isPremium && (
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-gradient-to-r from-olive to-brown text-white dark:from-lightSage dark:to-olive dark:text-darkBg text-xs font-black uppercase tracking-widest py-1.5 px-6 rounded-full shadow-lg border border-white/20">
+                        Most Popular
+                    </span>
+                </div>
+            )}
+
+            <h3 className="text-3xl font-black text-gray-900 dark:text-cream mb-4">{plan.name}</h3>
+
+            <div className="mb-8 flex items-baseline">
+                <span className="text-5xl font-black text-gray-900 dark:text-white tracking-tighter">
+                    ৳{priceDisplay.toLocaleString()}
+                </span>
+                <span className="text-gray-500 dark:text-gray-400 font-bold ml-2">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
+            </div>
+
+            <div className="w-full h-px bg-gradient-to-r from-gray-200 via-gray-300 to-transparent dark:from-gray-800 dark:via-gray-700 mb-8"></div>
+
+            <ul className="space-y-6 mb-12 flex-1">
+                {plan.category === 'BASE_MEMBERSHIP' ? (
+                    <>
+                        {isPremium ? (
+                            <>
+                                <li className="flex items-start text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
+                                    <CheckIcon />
+                                    <span>
+                                        <strong className="text-gray-900 dark:text-white block">Elite Facility Access</strong>
+                                        <span className="text-sm opacity-80">Unrestricted 24/7 gym floor entry across all locations</span>
+                                    </span>
+                                </li>
+                                <li className="flex items-start text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
+                                    <CheckIcon />
+                                    <span>
+                                        <strong className="text-gray-900 dark:text-white block">Dedicated Personal Trainer</strong>
+                                        <span className="text-sm opacity-80">2 complimentary PT sessions per month</span>
+                                    </span>
+                                </li>
+                                <li className="flex items-start text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
+                                    <CheckIcon />
+                                    <span>
+                                        <strong className="text-gray-900 dark:text-white block">Nutrition & Diet Plan</strong>
+                                        <span className="text-sm opacity-80">Monthly personalized macro & diet tracking</span>
+                                    </span>
+                                </li>
+                                <li className="flex items-start text-olive dark:text-lightSage font-bold leading-relaxed">
+                                    <CheckIcon />
+                                    <span>
+                                        <strong className="text-gray-900 dark:text-white block">Premium Amenities</strong>
+                                        <span className="text-sm opacity-80 font-medium">Towel service, private lockers & luxury showers</span>
+                                    </span>
+                                </li>
+                                <li className="flex items-start text-olive dark:text-lightSage font-bold leading-relaxed">
+                                    <CheckIcon />
+                                    <span>
+                                        <span className="block">VIP Recovery Lounge</span>
+                                        <span className="text-sm opacity-80 font-medium">Sauna, ice bath & massage therapy access</span>
+                                    </span>
+                                </li>
+                            </>
+                        ) : (
+                            <>
+                                <li className="flex items-start text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
+                                    <CheckIcon />
+                                    <span>
+                                        <strong className="text-gray-900 dark:text-white block">Standard Facility Access</strong>
+                                        <span className="text-sm opacity-80">24/7 gym floor entry at home location</span>
+                                    </span>
+                                </li>
+                                <li className="flex items-start text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
+                                    <CheckIcon />
+                                    <span>
+                                        <strong className="text-gray-900 dark:text-white block">Cardio & Weights Area</strong>
+                                        <span className="text-sm opacity-80">Full access to general training zones</span>
+                                    </span>
+                                </li>
+                                <li className="flex items-start text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
+                                    <CheckIcon />
+                                    <span>
+                                        <strong className="text-gray-900 dark:text-white block">Community Support</strong>
+                                        <span className="text-sm opacity-80">Free app tracking and standard community features</span>
+                                    </span>
+                                </li>
+                            </>
+                        )}
+                    </>
+                ) : (
+                    <>
+                        <li className="flex items-start text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
+                            <CheckIcon />
+                            <span>
+                                <strong className="text-gray-900 dark:text-white block">Class Capacity: {plan.allocatedSeats || 'N/A'}</strong>
+                                <span className="text-sm opacity-80">Limited spots available</span>
+                            </span>
+                        </li>
+                        <li className="flex items-start text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
+                            <CheckIcon />
+                            <span>
+                                <strong className="text-gray-900 dark:text-white block">Schedule</strong>
+                                <span className="text-sm opacity-80 capitalize">
+                                    Every {plan.recurringDayOfWeek ? plan.recurringDayOfWeek.split(',').map(d => d.toLowerCase()).join(', ') : 'TBD'}
+                                </span>
+                            </span>
+                        </li>
+                        <li className="flex items-start text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
+                            <CheckIcon />
+                            <span>
+                                <strong className="text-gray-900 dark:text-white block">Time</strong>
+                                <span className="text-sm opacity-80">
+                                    {plan.recurringStartTime || 'TBD'} ({plan.durationMinutes || 60} mins)
+                                </span>
+                            </span>
+                        </li>
+                    </>
+                )}
+            </ul>
+
+            <button
+                onClick={() => handleSelectPlan(plan)}
+                disabled={isLoading}
+                className={`w-full py-4 rounded-xl font-black text-lg transition-all duration-300 shadow-md transform hover:-translate-y-1
+                    ${isPremium
+                        ? 'bg-olive text-white hover:bg-olive/90 hover:shadow-olive/30 dark:bg-lightSage dark:text-darkBg dark:hover:bg-cream dark:hover:shadow-lightSage/30'
+                        : 'bg-gray-900 text-white hover:bg-black dark:bg-gray-800 dark:text-cream dark:hover:bg-gray-700 hover:shadow-xl'
+                    }`}
+            >
+                {isLoading && loadingPlan === plan.id ? 'Processing...' : 'Select Plan'}
+            </button>
         </div>
     );
 }

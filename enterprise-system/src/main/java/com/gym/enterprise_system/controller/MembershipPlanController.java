@@ -2,11 +2,13 @@ package com.gym.enterprise_system.controller;
 
 import com.gym.enterprise_system.entity.MembershipPlan;
 import com.gym.enterprise_system.repository.MembershipPlanRepository;
+import com.gym.enterprise_system.service.SchedulingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,6 +25,7 @@ public class MembershipPlanController {
 
     private final MembershipPlanRepository planRepository;
     private final UserRepository userRepository;
+    private final SchedulingService schedulingService;
 
     @GetMapping
     public ResponseEntity<List<MembershipPlan>> getAllPlans() {
@@ -47,8 +50,9 @@ public class MembershipPlanController {
             }
             plan.setDiscountLevel(discountLevel);
 
-            if (request.get("recurringDayOfWeek") != null) {
-                plan.setRecurringDayOfWeek((String) request.get("recurringDayOfWeek"));
+            if (request.get("recurringDaysOfWeek") != null) {
+                List<String> daysList = (List<String>) request.get("recurringDaysOfWeek");
+                plan.setRecurringDayOfWeek(String.join(",", daysList));
             }
             if (request.get("recurringStartTime") != null) {
                 plan.setRecurringStartTime((String) request.get("recurringStartTime"));
@@ -77,6 +81,34 @@ public class MembershipPlanController {
             }
 
             MembershipPlan savedPlan = planRepository.save(plan);
+
+            // AUTO-GENERATE CLASS SESSIONS for CLASS_PACKAGE plans
+            if ("CLASS_PACKAGE".equals(savedPlan.getCategory())
+                    && savedPlan.getRecurringDayOfWeek() != null
+                    && savedPlan.getRecurringStartTime() != null
+                    && savedPlan.getAllocatedRoomId() != null
+                    && savedPlan.getDurationMinutes() != null
+                    && savedPlan.getAllocatedSeats() != null
+                    && savedPlan.getTrainers() != null
+                    && !savedPlan.getTrainers().isEmpty()) {
+
+                List<String> daysList = Arrays.asList(savedPlan.getRecurringDayOfWeek().split(","));
+                UUID primaryTrainerId = savedPlan.getTrainers().iterator().next().getId();
+                int weeks = request.get("weeksToGenerate") != null
+                        ? Integer.parseInt(request.get("weeksToGenerate").toString())
+                        : 52;
+
+                schedulingService.createClassBundle(
+                        savedPlan.getName(),
+                        daysList,
+                        savedPlan.getRecurringStartTime(),
+                        savedPlan.getDurationMinutes(),
+                        weeks,
+                        savedPlan.getAllocatedRoomId(),
+                        primaryTrainerId,
+                        savedPlan.getAllocatedSeats());
+            }
+
             return ResponseEntity.ok(Map.of("message", "Membership Plan created successfully.", "plan", savedPlan));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Error creating plan: " + e.getMessage()));

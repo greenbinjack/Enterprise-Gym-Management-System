@@ -6,14 +6,16 @@ export default function MemberCalendar() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [bookingMessage, setBookingMessage] = useState(null);
+    const [selectedDate, setSelectedDate] = useState(new Date());
 
     const currentUser = JSON.parse(localStorage.getItem('user'));
 
     useEffect(() => {
         const fetchClasses = async () => {
+            setLoading(true);
             try {
-                // Fetch all classes using the new endpoint with the api wrapper
-                const res = await api.get('/api/scheduling/classes');
+                // Fetch classes filtered by user's subscription expiry
+                const res = await api.get(`/api/scheduling/member/${currentUser.id}/available-classes`);
                 setClasses(res.data);
             } catch (err) {
                 console.error("Failed to fetch classes", err);
@@ -22,8 +24,8 @@ export default function MemberCalendar() {
                 setLoading(false);
             }
         };
-        fetchClasses();
-    }, []);
+        if (currentUser?.id) fetchClasses();
+    }, [currentUser?.id]);
 
     const handleBookClass = async (classId, className) => {
         setBookingMessage(null);
@@ -33,8 +35,6 @@ export default function MemberCalendar() {
                 classId: classId
             });
             setBookingMessage({ type: 'success', text: `Successfully enrolled in ${className}!` });
-
-            // Re-fetch to update capacities (if we implement real-time seat tracking later)
         } catch (err) {
             console.error("Failed to book class", err);
             setBookingMessage({
@@ -42,6 +42,34 @@ export default function MemberCalendar() {
                 text: err.response?.data?.error || `Failed to book ${className}.`
             });
         }
+    };
+
+    // Helper: Get start of the week for the selected date
+    const getWeekDays = (date) => {
+        const start = new Date(date);
+        start.setDate(start.getDate() - start.getDay()); // Sunday
+        const days = [];
+        for (let i = 0; i < 7; i++) {
+            const day = new Date(start);
+            day.setDate(start.getDate() + i);
+            days.push(day);
+        }
+        return days;
+    };
+
+    const weekDays = getWeekDays(selectedDate);
+
+    const changeWeek = (offset) => {
+        const newDate = new Date(selectedDate);
+        newDate.setDate(selectedDate.getDate() + (offset * 7));
+        setSelectedDate(newDate);
+    };
+
+    const isToday = (date) => {
+        const today = new Date();
+        return date.getDate() === today.getDate() &&
+            date.getMonth() === today.getMonth() &&
+            date.getFullYear() === today.getFullYear();
     };
 
     if (loading) {
@@ -54,17 +82,40 @@ export default function MemberCalendar() {
 
     return (
         <div className="p-6 md:p-10 max-w-7xl mx-auto h-full overflow-y-auto">
-            <div className="mb-8">
-                <h1 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-cream tracking-tight mb-2">
-                    Class <span className="text-olive dark:text-lightSage">Calendar</span>
-                </h1>
-                <p className="text-gray-500 dark:text-gray-400 font-medium tracking-wide">Browse and book upcoming fitness classes led by professional trainers.</p>
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
+                <div>
+                    <h1 className="text-4xl font-black text-gray-900 dark:text-cream tracking-tight mb-2">
+                        Class <span className="text-olive dark:text-lightSage">Calendar</span>
+                    </h1>
+                    <p className="text-gray-500 dark:text-gray-400 font-medium tracking-wide">
+                        Your personalized schedule based on your active plans.
+                    </p>
+                </div>
+
+                {/* Calendar Navigation */}
+                <div className="flex items-center gap-4 bg-white dark:bg-darkCard p-2 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
+                    <button
+                        onClick={() => changeWeek(-1)}
+                        className="p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-400"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+                    </button>
+                    <div className="px-4 text-sm font-black text-gray-900 dark:text-cream min-w-[180px] text-center uppercase tracking-widest">
+                        {weekDays[0].toLocaleDateString('default', { month: 'short', day: 'numeric' })} - {weekDays[6].toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </div>
+                    <button
+                        onClick={() => changeWeek(1)}
+                        className="p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-400"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+                    </button>
+                </div>
             </div>
 
             {bookingMessage && (
-                <div className={`mb-8 p-5 rounded-2xl font-bold text-sm shadow-sm flex items-center justify-between transition-all ${bookingMessage.type === 'success'
-                        ? 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:border-green-800/50 dark:text-green-400'
-                        : 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:border-red-800/50 dark:text-red-400'
+                <div className={`mb-8 p-5 rounded-2xl font-bold text-sm shadow-sm flex items-center justify-between transition-all animate-in fade-in slide-in-from-top-4 ${bookingMessage.type === 'success'
+                    ? 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:border-green-800/50 dark:text-green-400'
+                    : 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:border-red-800/50 dark:text-red-400'
                     }`}>
                     <div className="flex items-center gap-3">
                         <span className="text-xl">{bookingMessage.type === 'success' ? '✅' : '⚠️'}</span>
@@ -75,75 +126,91 @@ export default function MemberCalendar() {
             )}
 
             {error ? (
-                <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-6 rounded-2xl border border-red-200 dark:border-red-800 shadow-sm flex items-start gap-4">
-                    <span className="text-2xl mt-0.5">🛑</span>
+                <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-8 rounded-3xl border border-red-200 dark:border-red-800 shadow-sm flex items-start gap-6">
+                    <span className="text-4xl mt-0.5">🛑</span>
                     <div>
-                        <h3 className="font-bold text-lg mb-1">Error Loading Calendar</h3>
-                        <p className="text-sm font-medium opacity-90">{error}</p>
+                        <h3 className="font-extrabold text-xl mb-1">Error Loading Calendar</h3>
+                        <p className="font-medium opacity-90">{error}</p>
                     </div>
                 </div>
-            ) : classes.length === 0 ? (
-                <div className="text-center py-20 px-6 bg-white dark:bg-darkCard rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
-                    <span className="text-6xl mb-6 block opacity-80">📅</span>
-                    <h3 className="text-2xl font-black text-gray-900 dark:text-cream mb-2">No Classes Scheduled</h3>
-                    <p className="text-gray-500 dark:text-gray-400 font-medium max-w-sm mx-auto">The schedule is currently empty. Check back later for new upcoming sessions!</p>
-                </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {classes.map(cls => {
-                        const startDate = new Date(cls.startTime);
-                        const isUpcoming = startDate > new Date();
-                        const isFull = cls.maxCapacity <= 0; // Simplified capacity check for UI
+                <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
+                    {weekDays.map((day, idx) => {
+                        const dayClasses = classes.filter(cls => {
+                            const clsDate = new Date(cls.startTime);
+                            return clsDate.getDate() === day.getDate() &&
+                                clsDate.getMonth() === day.getMonth() &&
+                                clsDate.getFullYear() === day.getFullYear();
+                        }).sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
                         return (
-                            <div key={cls.id} className="bg-white dark:bg-darkCard rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 flex flex-col h-full hover:shadow-lg hover:border-olive/30 dark:hover:border-lightSage/30 transition-all group duration-300">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div className="bg-gray-50 dark:bg-darkBg border border-gray-100 dark:border-gray-700 text-gray-900 dark:text-cream px-4 py-2.5 rounded-2xl text-center min-w-[70px] group-hover:bg-olive group-hover:text-white dark:group-hover:bg-lightSage dark:group-hover:text-darkBg group-hover:border-transparent transition-colors shadow-sm">
-                                        <div className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-0.5">{startDate.toLocaleString('default', { month: 'short' })}</div>
-                                        <div className="text-2xl font-black leading-none">{startDate.getDate()}</div>
-                                    </div>
-                                    <span className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm whitespace-nowrap">
-                                        <svg className="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                        {cls.room.name}
-                                    </span>
+                            <div key={idx} className="flex flex-col">
+                                {/* Day Header */}
+                                <div className={`text-center mb-4 p-4 rounded-2xl transition-all ${isToday(day)
+                                    ? 'bg-olive text-white dark:bg-lightSage dark:text-darkBg shadow-lg shadow-olive/20'
+                                    : 'bg-white dark:bg-darkCard text-gray-900 dark:text-cream border border-gray-100 dark:border-gray-800 shadow-sm'
+                                    }`}>
+                                    <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-70 mb-1">{day.toLocaleDateString('default', { weekday: 'short' })}</div>
+                                    <div className="text-2xl font-black">{day.getDate()}</div>
                                 </div>
 
-                                <div className="flex-grow flex flex-col">
-                                    <h3 className="text-xl font-black text-gray-900 dark:text-cream mb-2 leading-tight">{cls.name}</h3>
-                                    <p className="inline-flex items-center w-fit text-olive dark:text-lightSage bg-olive/10 dark:bg-lightSage/10 font-bold text-xs px-2.5 py-1 rounded border border-olive/20 dark:border-lightSage/20 mb-5 shadow-sm">
-                                        <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                        {startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </p>
-
-                                    <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400 bg-gray-50/50 dark:bg-darkBg/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 mt-auto">
-                                        <p className="flex items-center">
-                                            <span className="w-6 flex justify-center opacity-70">👤</span>
-                                            <span className="font-bold text-gray-900 dark:text-cream text-xs uppercase tracking-wide ml-2 bg-white dark:bg-darkCard px-2 py-1 rounded shadow-sm border border-gray-200 dark:border-gray-700 truncate">{cls.trainer.firstName} {cls.trainer.lastName}</span>
-                                        </p>
-                                        <p className="flex items-center pt-2 border-t border-gray-200 dark:border-gray-700">
-                                            <span className="w-6 flex justify-center opacity-70">👥</span>
-                                            <span className="flex items-center ml-2 text-xs font-bold text-gray-900 dark:text-gray-300">
-                                                {cls.maxCapacity} <span className="opacity-70 ml-1 font-medium">Spots Total</span>
-                                            </span>
-                                        </p>
-                                    </div>
+                                {/* Class Slots Container */}
+                                <div className="space-y-3 min-h-[300px]">
+                                    {dayClasses.length > 0 ? (
+                                        dayClasses.map(cls => (
+                                            <ClassCard
+                                                key={cls.id}
+                                                cls={cls}
+                                                onBook={() => handleBookClass(cls.id, cls.name)}
+                                            />
+                                        ))
+                                    ) : (
+                                        <div className="h-full flex items-center justify-center p-6 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-3xl text-gray-400 dark:text-gray-600 italic text-[10px] uppercase font-bold tracking-widest text-center">
+                                            No Classes
+                                        </div>
+                                    )}
                                 </div>
-
-                                <button
-                                    onClick={() => handleBookClass(cls.id, cls.name)}
-                                    disabled={!isUpcoming || isFull}
-                                    className={`mt-6 w-full py-3.5 rounded-xl font-bold transition-all shadow-sm focus:ring-2 focus:ring-offset-2 focus:ring-olive dark:focus:ring-offset-darkBg flex items-center justify-center gap-2
-                                        ${isUpcoming && !isFull
-                                            ? 'bg-olive hover:bg-olive/90 text-white dark:bg-lightSage dark:text-darkBg dark:hover:bg-lightSage/90 hover:shadow-md hover:-translate-y-0.5'
-                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed border border-gray-200 dark:border-gray-700'}`}
-                                >
-                                    {isUpcoming ? (isFull ? 'Class Full' : 'Book Class') : 'Class Ended'}
-                                </button>
                             </div>
                         );
                     })}
                 </div>
             )}
+        </div>
+    );
+}
+
+function ClassCard({ cls, onBook }) {
+    const startTime = new Date(cls.startTime);
+    const isUpcoming = startTime > new Date();
+    const isFull = cls.maxCapacity <= 0;
+
+    return (
+        <div className="group relative bg-white dark:bg-darkCard rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 hover:shadow-xl hover:-translate-y-1 hover:border-olive/30 dark:hover:border-lightSage/30 transition-all duration-300">
+            <div className="text-[10px] font-black text-olive dark:text-lightSage mb-2 bg-olive/10 dark:bg-lightSage/10 w-fit px-2 py-0.5 rounded uppercase tracking-wider">
+                {startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </div>
+            <h4 className="font-extrabold text-gray-900 dark:text-cream text-sm leading-tight mb-2 group-hover:text-olive dark:group-hover:text-lightSage transition-colors line-clamp-2">
+                {cls.name}
+            </h4>
+            <div className="space-y-1.5 mb-4 opacity-70">
+                <p className="text-[10px] font-bold text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
+                    <span className="text-sm">📍</span> {cls.room.name}
+                </p>
+                <p className="text-[10px] font-bold text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
+                    <span className="text-sm">👤</span> {cls.trainer.firstName}
+                </p>
+            </div>
+
+            <button
+                onClick={onBook}
+                disabled={!isUpcoming || isFull}
+                className={`w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isUpcoming && !isFull
+                    ? 'bg-gray-900 text-white hover:bg-black dark:bg-gray-800 dark:text-cream dark:hover:bg-gray-700 shadow-sm'
+                    : 'bg-gray-50 dark:bg-darkBg text-gray-400 dark:text-gray-500 cursor-not-allowed border border-gray-200 dark:border-gray-800'
+                    }`}
+            >
+                {isUpcoming ? (isFull ? 'Full' : 'Book') : 'Ended'}
+            </button>
         </div>
     );
 }

@@ -174,39 +174,3 @@ VALUES (
         'Strength',
         'AVAILABLE'
     );
-
--- 8. Seed Dummy Analytics Check-Ins (From V11)
-INSERT INTO
-    check_ins (user_id, check_in_time)
-VALUES (
-        (
-            SELECT id
-            FROM users
-            LIMIT 1
-        ),
-        CURRENT_DATE + interval '17 hours'
-    ),
-    (
-        (
-            SELECT id
-            FROM users
-            LIMIT 1
-        ),
-        CURRENT_DATE + interval '17 hours'
-    ),
-    (
-        (
-            SELECT id
-            FROM users
-            LIMIT 1
-        ),
-        CURRENT_DATE + interval '18 hours'
-    ),
-    (
-        (
-            SELECT id
-            FROM users
-            LIMIT 1
-        ),
-        CURRENT_DATE + interval '08 hours'
-    );

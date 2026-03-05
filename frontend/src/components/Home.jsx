@@ -7,7 +7,7 @@ export default function Home() {
     return (
         <div className="flex flex-col font-sans bg-cream dark:bg-darkBg transition-colors duration-500 selection:bg-olive selection:text-white dark:selection:bg-lightSage dark:selection:text-darkBg">
             {/* Hero Section */}
-            <div className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-4 flex flex-col items-center justify-center text-center overflow-hidden min-h-screen">
+            <div className="relative pt-40 pb-20 md:pt-48 lg:pt-56 lg:pb-32 px-4 flex flex-col items-center justify-center text-center overflow-hidden min-h-screen">
                 {/* Background decorative blobs */}
                 <div className="absolute top-20 -left-20 w-96 h-96 bg-lightSage/40 dark:bg-olive/15 rounded-full mix-blend-multiply dark:mix-blend-lighten filter blur-[100px] opacity-70 animate-blob"></div>
                 <div className="absolute top-40 -right-20 w-96 h-96 bg-olive/30 dark:bg-brown/15 rounded-full mix-blend-multiply dark:mix-blend-lighten filter blur-[100px] opacity-70 animate-blob animation-delay-2000"></div>
@@ -65,12 +65,12 @@ export default function Home() {
                             {/* Decorative framing for image placeholder */}
                             <div className="absolute -inset-4 bg-gradient-to-tr from-olive to-brown dark:from-lightSage dark:to-olive rounded-3xl opacity-20 dark:opacity-10 blur-xl"></div>
                             <div className="relative h-[500px] w-full bg-white dark:bg-darkCard rounded-3xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden group">
-                                <div className="absolute inset-0 bg-gray-100 dark:bg-gray-800/50 flex flex-col items-center justify-center">
-                                    <svg className="w-20 h-20 text-olive/30 dark:text-lightSage/30 mb-4 group-hover:scale-110 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                                    <span className="text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest text-sm">Premium Facility</span>
+                                <img src="https://images.unsplash.com/photo-1540497077202-7c8a3999166f?q=80&w=1470&auto=format&fit=crop" alt="Premium Facility" className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex flex-col justify-end p-8">
+                                    <span className="text-white font-bold uppercase tracking-widest text-sm mb-2 opacity-90">Premium Facility</span>
                                 </div>
                                 {/* Diagonal premium shine effect */}
-                                <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent group-hover:animate-shimmer"></div>
+                                <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:animate-shimmer pointer-events-none"></div>
                             </div>
 
                             {/* Floating stat card */}
@@ -89,7 +89,7 @@ export default function Home() {
                             </div>
 
                             <p className="text-gray-600 dark:text-gray-400 text-lg leading-relaxed">
-                                Founded in 2024, Enterprise Gym isn't just a place to sweat. We are a sanctuary for those who demand excellence in every aspect of their lives. We've combined country-club aesthetics with hardcore training methodologies to create an unparalleled fitness environment.
+                                Founded in 2024, Vortex isn't just a place to sweat. We are a sanctuary for those who demand excellence in every aspect of their lives. We've combined country-club aesthetics with hardcore training methodologies to create an unparalleled fitness environment.
                             </p>
 
                             <ul className="space-y-4">
@@ -109,7 +109,7 @@ export default function Home() {
                             </ul>
 
                             <div className="pt-4">
-                                <Link to="/about" className="text-olive dark:text-lightSage font-bold text-lg hover:underline underline-offset-4 decoration-2">
+                                <Link to="/about" onClick={() => window.scrollTo(0, 0)} className="text-olive dark:text-lightSage font-bold text-lg hover:underline underline-offset-4 decoration-2">
                                     Discover our facility &rarr;
                                 </Link>
                             </div>

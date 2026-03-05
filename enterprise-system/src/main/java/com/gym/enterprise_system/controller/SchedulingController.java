@@ -2,10 +2,12 @@ package com.gym.enterprise_system.controller;
 
 import com.gym.enterprise_system.entity.Room;
 import com.gym.enterprise_system.entity.User;
+import com.gym.enterprise_system.entity.MembershipPlan;
 import com.gym.enterprise_system.repository.ClassBookingRepository;
 import com.gym.enterprise_system.repository.ClassSessionRepository;
 import com.gym.enterprise_system.repository.RoomRepository;
 import com.gym.enterprise_system.repository.UserRepository;
+import com.gym.enterprise_system.repository.MembershipPlanRepository;
 import com.gym.enterprise_system.service.SchedulingService;
 import lombok.RequiredArgsConstructor;
 
@@ -13,9 +15,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/scheduling")
@@ -26,6 +30,7 @@ public class SchedulingController {
     private final SchedulingService schedulingService;
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
+    private final MembershipPlanRepository planRepository;
 
     @Autowired
     private final ClassSessionRepository classSessionRepository;
@@ -76,7 +81,7 @@ public class SchedulingController {
     public ResponseEntity<?> checkAvailability(@RequestBody Map<String, Object> req) {
         try {
             return ResponseEntity.ok(schedulingService.getAvailableResources(
-                    req.get("dayOfWeek").toString(),
+                    (List<String>) req.get("daysOfWeek"),
                     req.get("time").toString(),
                     Integer.parseInt(req.get("duration").toString()),
                     Integer.parseInt(req.get("weeks").toString())));
@@ -88,9 +93,17 @@ public class SchedulingController {
     @PostMapping("/admin/bundle")
     public ResponseEntity<?> createBundle(@RequestBody Map<String, Object> req) {
         try {
+            List<String> daysOfWeek = new ArrayList<>();
+            Object daysObj = req.get("daysOfWeek");
+            if (daysObj instanceof List) {
+                daysOfWeek = (List<String>) daysObj;
+            } else if (daysObj instanceof String) {
+                daysOfWeek = List.of(((String) daysObj).split(","));
+            }
+
             schedulingService.createClassBundle(
                     req.get("name").toString(),
-                    req.get("dayOfWeek").toString(),
+                    daysOfWeek,
                     req.get("time").toString(),
                     Integer.parseInt(req.get("duration").toString()),
                     Integer.parseInt(req.get("weeks").toString()),
@@ -179,4 +192,64 @@ public class SchedulingController {
         }
     }
 
+    // NEW: Member available classes (filtered by subscription)
+    @GetMapping("/member/{userId}/available-classes")
+    public ResponseEntity<?> getMemberAvailableClasses(@PathVariable UUID userId) {
+        try {
+            // Fetch user subscriptions
+            List<com.gym.enterprise_system.entity.Subscription> subs = schedulingService.getUserSubscriptions(userId);
+
+            // Find the furthest end date
+            java.time.LocalDateTime maxEndDate = subs.stream()
+                    .map(com.gym.enterprise_system.entity.Subscription::getEndDate)
+                    .filter(java.util.Objects::nonNull)
+                    .max(java.time.LocalDateTime::compareTo)
+                    .orElse(java.time.LocalDateTime.now().plusDays(7)); // Or some default
+
+            // Fetch all classes
+            List<com.gym.enterprise_system.entity.ClassSession> allClasses = classSessionRepository.findAll();
+
+            // Filter classes that start before maxEndDate
+            List<com.gym.enterprise_system.entity.ClassSession> filtered = allClasses.stream()
+                    .filter(cls -> cls.getStartTime().isBefore(maxEndDate))
+                    .sorted((a, b) -> a.getStartTime().compareTo(b.getStartTime()))
+                    .toList();
+            return ResponseEntity.ok(filtered);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Admin: Sync/Generate missing sessions for all existing active plans
+    @PostMapping("/admin/sync-all-plans")
+    public ResponseEntity<?> syncAllPlans() {
+        try {
+            List<MembershipPlan> activePlans = planRepository.findByIsActiveTrue();
+            int plansSynced = 0;
+            for (MembershipPlan plan : activePlans) {
+                if ("CLASS_PACKAGE".equals(plan.getCategory()) &&
+                        plan.getRecurringDayOfWeek() != null &&
+                        plan.getRecurringStartTime() != null &&
+                        plan.getAllocatedRoomId() != null &&
+                        plan.getTrainers() != null &&
+                        !plan.getTrainers().isEmpty()) {
+
+                    // Generate 52 weeks
+                    schedulingService.createClassBundle(
+                            plan.getName(),
+                            Arrays.asList(plan.getRecurringDayOfWeek().split(",")),
+                            plan.getRecurringStartTime(),
+                            plan.getDurationMinutes() != null ? plan.getDurationMinutes() : 60,
+                            52,
+                            plan.getAllocatedRoomId(),
+                            plan.getTrainers().iterator().next().getId(),
+                            plan.getAllocatedSeats() != null ? plan.getAllocatedSeats() : 30);
+                    plansSynced++;
+                }
+            }
+            return ResponseEntity.ok(Map.of("message", "Synced " + plansSynced + " class plans. Sessions generated."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

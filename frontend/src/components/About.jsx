@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 export default function About() {
 
     return (
-        <div className="min-h-screen bg-cream dark:bg-darkBg transition-colors py-12 px-4 sm:px-6 lg:px-12 relative overflow-hidden flex flex-col">
+        <div className="min-h-screen bg-cream dark:bg-darkBg transition-colors pt-32 pb-12 px-4 sm:px-6 lg:px-12 relative overflow-hidden flex flex-col">
             {/* Background decorative blobs */}
             <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-olive/10 dark:bg-lightSage/5 rounded-full filter blur-[150px] pointer-events-none"></div>
             <div className="absolute bottom-20 left-0 w-[500px] h-[500px] bg-brown/10 dark:bg-olive/10 rounded-full filter blur-[120px] pointer-events-none"></div>
@@ -23,7 +23,7 @@ export default function About() {
                         </span>
                     </h1>
                     <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed font-medium">
-                        Founded in 2024, Enterprise Gym isn't just a place to sweat. We are a sanctuary for those who demand excellence in every aspect of their lives.
+                        Founded in 2024, Vortex isn't just a place to sweat. We are a sanctuary for those who demand excellence in every aspect of their lives.
                     </p>
                 </div>
 
@@ -45,6 +45,28 @@ export default function About() {
                             <p className="text-gray-600 dark:text-gray-400 leading-relaxed font-medium">{feature.desc}</p>
                         </div>
                     ))}
+                </div>
+
+                {/* Gallery Section */}
+                <div className="mb-24">
+                    <div className="text-center mb-12">
+                        <h2 className="text-4xl font-black text-gray-900 dark:text-cream tracking-tighter mb-4">Our Facility</h2>
+                        <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto font-medium">Take a look inside the premier fitness sanctuary.</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="h-64 md:h-80 rounded-3xl overflow-hidden shadow-lg group">
+                            <img src="https://images.unsplash.com/photo-1540497077202-7c8a3999166f?q=80&w=1470&auto=format&fit=crop" alt="Gym weights" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                        </div>
+                        <div className="h-64 md:h-80 rounded-3xl overflow-hidden shadow-lg group lg:col-span-2">
+                            <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=1470&auto=format&fit=crop" alt="Gym training area" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                        </div>
+                        <div className="h-64 md:h-80 rounded-3xl overflow-hidden shadow-lg group lg:col-span-2">
+                            <img src="https://images.unsplash.com/photo-1593079831268-3381b0c1239b?q=80&w=1469&auto=format&fit=crop" alt="Cardio equipment" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                        </div>
+                        <div className="h-64 md:h-80 rounded-3xl overflow-hidden shadow-lg group">
+                            <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1470&auto=format&fit=crop" alt="Recovery room" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                        </div>
+                    </div>
                 </div>
 
                 {/* Call To Action */}
