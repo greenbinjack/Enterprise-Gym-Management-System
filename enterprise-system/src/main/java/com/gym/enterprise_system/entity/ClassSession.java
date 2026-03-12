@@ -39,4 +39,10 @@ public class ClassSession {
 
     @Column(name = "recurring_group_id")
     private UUID recurringGroupId;
+
+    @org.hibernate.annotations.Formula("(SELECT COUNT(cb.id) FROM class_bookings cb WHERE cb.class_session_id = id AND cb.status IN ('ENROLLED', 'PRESENT', 'ABSENT'))")
+    private Integer bookedCount;
+
+    @org.hibernate.annotations.Formula("(SELECT COUNT(cb.id) FROM class_bookings cb WHERE cb.class_session_id = id AND cb.status = 'PRESENT')")
+    private Integer attendedCount;
 }

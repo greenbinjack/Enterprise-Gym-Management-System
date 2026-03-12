@@ -5,6 +5,7 @@ export default function UserDirectory() {
     const [users, setUsers] = useState([]);
     const [search, setSearch] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedUser, setSelectedUser] = useState(null);
 
     const fetchUsers = async (query = '') => {
         setIsLoading(true);
@@ -88,7 +89,8 @@ export default function UserDirectory() {
                         {users.map((u) => (
                             <div
                                 key={u.id}
-                                className="bg-white dark:bg-darkCard border border-gray-100 dark:border-gray-800 rounded-3xl p-5 flex flex-col items-center text-center hover:shadow-lg hover:border-olive/30 dark:hover:border-lightSage/30 transition-all group"
+                                onClick={() => setSelectedUser(u)}
+                                className="bg-white dark:bg-darkCard border border-gray-100 dark:border-gray-800 rounded-3xl p-5 flex flex-col items-center text-center hover:shadow-lg hover:border-olive/30 dark:hover:border-lightSage/30 transition-all group cursor-pointer"
                             >
                                 {/* Avatar */}
                                 <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-50 dark:bg-darkBg mb-4 flex-shrink-0 border-2 border-transparent group-hover:border-olive/30 dark:group-hover:border-lightSage/30 transition-colors shadow-sm">
@@ -132,6 +134,81 @@ export default function UserDirectory() {
                         </p>
                     </div>
                 </>
+            )}
+
+            {/* Detailed User Card Modal */}
+            {selectedUser && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-darkCard rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800">
+                        {/* Header Banner */}
+                        <div className="h-32 bg-gradient-to-tr from-olive/20 to-sage/40 dark:from-darkBg dark:to-olive/20 relative flex items-start justify-end p-4">
+                            <button
+                                onClick={() => setSelectedUser(null)}
+                                className="bg-white/50 dark:bg-black/20 hover:bg-white dark:hover:bg-black/40 text-gray-700 dark:text-gray-300 rounded-full p-2 backdrop-blur-md transition-all"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                        
+                        {/* Profile Section */}
+                        <div className="px-8 pb-8 -mt-16 flex flex-col items-center relative">
+                            <div className="w-32 h-32 rounded-full border-4 border-white dark:border-darkCard overflow-hidden bg-gray-100 dark:bg-gray-800 shadow-lg flex-shrink-0 mb-4 z-10">
+                                {selectedUser.photoUrl ? (
+                                    <img src={selectedUser.photoUrl} alt={selectedUser.firstName} className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-5xl font-black text-gray-400 dark:text-gray-500">
+                                        {selectedUser.firstName?.[0] || '?'}
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <h2 className="text-2xl font-black text-gray-900 dark:text-cream leading-tight mb-1 text-center">
+                                {selectedUser.firstName} {selectedUser.lastName}
+                            </h2>
+                            <span className={`px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase mb-6 shadow-sm border ${getRoleBadge(selectedUser.role)}`}>
+                                {selectedUser.role}
+                            </span>
+                            
+                            {/* Details Grid */}
+                            <div className="w-full space-y-4">
+                                <div className="bg-gray-50 dark:bg-darkBg/50 rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                                    <div className="flex items-start gap-3 mb-3">
+                                        <span className="text-gray-400 mt-0.5">📧</span>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-0.5">Email Address</p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-cream truncate" title={selectedUser.email}>{selectedUser.email || 'N/A'}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-3 mb-3">
+                                        <span className="text-gray-400 mt-0.5">📱</span>
+                                        <div>
+                                            <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-0.5">Phone Number</p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-cream">{selectedUser.phoneNumber || 'N/A'}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-3 mb-3">
+                                        <span className="text-gray-400 mt-0.5">📍</span>
+                                        <div>
+                                            <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-0.5">Address</p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-cream">{selectedUser.address || 'N/A'}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <span className="text-gray-400 mt-0.5">📅</span>
+                                        <div>
+                                            <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-0.5">Joined System</p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-cream">
+                                                {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString(undefined, {
+                                                    year: 'numeric', month: 'long', day: 'numeric'
+                                                }) : 'N/A'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

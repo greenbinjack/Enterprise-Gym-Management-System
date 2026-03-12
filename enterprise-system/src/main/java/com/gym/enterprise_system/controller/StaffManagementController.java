@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -95,14 +96,22 @@ public class StaffManagementController {
                             String lc = search.toLowerCase();
                             return (u.getFirstName() + " " + u.getLastName()).toLowerCase().contains(lc);
                         })
-                        .map(u -> Map.of(
-                                "id", u.getId().toString(),
-                                "firstName", u.getFirstName(),
-                                "lastName", u.getLastName(),
-                                "role", u.getRole().toString(),
-                                "photoUrl", u.getProfilePhotoPath() != null
-                                        ? "http://localhost:8080" + u.getProfilePhotoPath()
-                                        : ""))
+                        .map(u -> {
+                            java.util.Map<String, String> map = new java.util.HashMap<>();
+                            map.put("id", u.getId().toString());
+                            map.put("firstName", u.getFirstName());
+                            map.put("lastName", u.getLastName());
+                            map.put("email", u.getEmail() == null ? "" : u.getEmail());
+                            map.put("phoneNumber", u.getPhone() == null ? "" : u.getPhone());
+                            map.put("address", u.getAddress() == null ? "" : u.getAddress());
+                            map.put("role", u.getRole().toString());
+                            map.put("createdAt", u.getCreatedAt() == null ? "" : u.getCreatedAt().toString());
+                            map.put("hourlyRate", u.getHourlyRate() != null ? u.getHourlyRate().toString() : "0.00");
+                            map.put("photoUrl", u.getProfilePhotoPath() != null
+                                    ? "http://localhost:8080" + u.getProfilePhotoPath()
+                                    : "");
+                            return map;
+                        })
                         .collect(Collectors.toList()));
     }
 
@@ -153,5 +162,52 @@ public class StaffManagementController {
                 "photoUrl", user.getProfilePhotoPath() != null
                         ? "http://localhost:8080" + user.getProfilePhotoPath()
                         : ""));
+    }
+
+    // ============================================================
+    // TRAINER MANAGEMENT - Admin sets per-hour pay rate
+    // ============================================================
+
+    @GetMapping("/api/admin/trainers")
+    public ResponseEntity<?> getTrainerRegistry() {
+        List<User> trainers = userRepository.findAll().stream()
+                .filter(u -> "TRAINER".equals(u.getRole().name()))
+                .toList();
+
+        return ResponseEntity.ok(trainers.stream().map(t -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", t.getId());
+            map.put("firstName", t.getFirstName());
+            map.put("lastName", t.getLastName());
+            map.put("email", t.getEmail() != null ? t.getEmail() : "");
+            map.put("hourlyRate", t.getHourlyRate() != null ? t.getHourlyRate() : BigDecimal.ZERO);
+            map.put("photoUrl", t.getProfilePhotoPath() != null
+                    ? "http://localhost:8080" + t.getProfilePhotoPath() : "");
+            return map;
+        }).toList());
+    }
+
+    @PatchMapping("/api/admin/users/{userId}/hourly-rate")
+    public ResponseEntity<?> updateUserHourlyRate(
+            @PathVariable UUID userId,
+            @RequestBody Map<String, Object> request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        BigDecimal rate = new BigDecimal(request.get("hourlyRate").toString());
+        user.setHourlyRate(rate);
+        userRepository.save(user);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Hourly rate updated.",
+                "hourlyRate", rate));
+    }
+
+    @PatchMapping("/api/admin/trainers/{trainerId}/hourly-rate")
+    @Deprecated
+    public ResponseEntity<?> updateTrainerHourlyRate(
+            @PathVariable UUID trainerId,
+            @RequestBody Map<String, Object> request) {
+        return updateUserHourlyRate(trainerId, request);
     }
 }

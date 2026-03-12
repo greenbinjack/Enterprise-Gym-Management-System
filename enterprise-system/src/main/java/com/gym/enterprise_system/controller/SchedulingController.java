@@ -1,13 +1,19 @@
 package com.gym.enterprise_system.controller;
 
-import com.gym.enterprise_system.entity.Room;
-import com.gym.enterprise_system.entity.User;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gym.enterprise_system.entity.ClassSession;
 import com.gym.enterprise_system.entity.MembershipPlan;
+import com.gym.enterprise_system.entity.Room;
+import com.gym.enterprise_system.entity.TrainerCommission;
+import com.gym.enterprise_system.entity.User;
 import com.gym.enterprise_system.repository.ClassBookingRepository;
 import com.gym.enterprise_system.repository.ClassSessionRepository;
-import com.gym.enterprise_system.repository.RoomRepository;
-import com.gym.enterprise_system.repository.UserRepository;
 import com.gym.enterprise_system.repository.MembershipPlanRepository;
+import com.gym.enterprise_system.repository.RoomRepository;
+import com.gym.enterprise_system.repository.SubscriptionRepository;
+import com.gym.enterprise_system.repository.TrainerCommissionRepository;
+import com.gym.enterprise_system.repository.UserRepository;
 import com.gym.enterprise_system.service.SchedulingService;
 import lombok.RequiredArgsConstructor;
 
@@ -15,11 +21,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/scheduling")
@@ -31,12 +45,15 @@ public class SchedulingController {
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
     private final MembershipPlanRepository planRepository;
+    private final SubscriptionRepository subscriptionRepository;
 
     @Autowired
     private final ClassSessionRepository classSessionRepository;
 
     @Autowired
     private final ClassBookingRepository classBookingRepository;
+
+    private final TrainerCommissionRepository trainerCommissionRepository;
 
     // Fetch dropdown data for the Admin UI
     @GetMapping("/setup-data")
@@ -129,30 +146,77 @@ public class SchedulingController {
         }
     }
 
-    // Member: Fetch classes they are currently booked for
-    @GetMapping("/member/{userId}/bookings")
-    public ResponseEntity<?> getMemberBookings(@PathVariable UUID userId) {
+    // Member: Get available classes based on their active subscriptions
+    // Pure Java implementation - no DB function required
+    @GetMapping("/member/{userId}/available-classes")
+    public ResponseEntity<?> getMemberAvailableClasses(@PathVariable UUID userId) {
         try {
-            // In a real app, query ClassBookingRepository for 'ENROLLED' or 'WAITLISTED'
-            // For now, we will return a simplified list of class sessions joined by the
-            // User's bookings
-            List<Map<String, Object>> bookings = classBookingRepository.findAll().stream()
-                    .filter(b -> b.getUser().getId().equals(userId) &&
-                            ("ENROLLED".equals(b.getStatus()) || "WAITLISTED".equals(b.getStatus())))
-                    .map(b -> Map.<String, Object>of(
-                            "id", b.getClassSession().getId(),
-                            "name", b.getClassSession().getName(),
-                            "startTime", b.getClassSession().getStartTime(),
-                            "endTime", b.getClassSession().getEndTime(),
-                            "room", b.getClassSession().getRoom().getName(),
-                            "trainer",
-                            b.getClassSession().getTrainer().getFirstName() + " "
-                                    + b.getClassSession().getTrainer().getLastName(),
-                            "status", b.getStatus()))
-                    .sorted((a, b) -> ((java.time.LocalDateTime) a.get("startTime"))
-                            .compareTo((java.time.LocalDateTime) b.get("startTime")))
+            // Get all active subscriptions for the user
+            List<com.gym.enterprise_system.entity.Subscription> activeSubs = subscriptionRepository.findAllByUserId(userId).stream()
+                    .filter(s -> "ACTIVE".equals(s.getStatus()))
                     .toList();
 
+            if (activeSubs.isEmpty()) {
+                return ResponseEntity.ok(List.of()); // No active plan
+            }
+
+            // Return class sessions that fall within any active subscription's date range
+            List<Map<String, Object>> sessions = classSessionRepository.findAll().stream()
+                    .filter(cs -> cs.getStartTime() != null && cs.getStartTime().isAfter(LocalDateTime.now()))
+                    .filter(cs -> activeSubs.stream().anyMatch(sub -> 
+                        !cs.getStartTime().isBefore(sub.getStartDate()) && 
+                        !cs.getStartTime().isAfter(sub.getEndDate())
+                    ))
+                    .sorted((a, b) -> a.getStartTime().compareTo(b.getStartTime()))
+                    .map(cs -> {
+                        Map<String, Object> m = new HashMap<>();
+                        m.put("sessionId", cs.getId());
+                        m.put("name", cs.getName());
+                        m.put("startTime", cs.getStartTime());
+                        m.put("endTime", cs.getEndTime());
+                        m.put("maxCapacity", cs.getMaxCapacity());
+                        m.put("roomId", cs.getRoom() != null ? cs.getRoom().getId() : null);
+                        m.put("roomName", cs.getRoom() != null ? cs.getRoom().getName() : "");
+                        m.put("trainerId", cs.getTrainer() != null ? cs.getTrainer().getId() : null);
+                        m.put("trainerFirstName", cs.getTrainer() != null ? cs.getTrainer().getFirstName() : "");
+                        m.put("trainerLastName", cs.getTrainer() != null ? cs.getTrainer().getLastName() : "");
+                        m.put("remainingCapacity", cs.getMaxCapacity());
+                        return m;
+                    })
+                    .toList();
+
+            return ResponseEntity.ok(sessions);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Member: Get all their bookings (non-cancelled)
+    @GetMapping("/member/{userId}/booked-classes")
+    public ResponseEntity<?> getMemberBookedClasses(@PathVariable UUID userId) {
+        try {
+            List<Map<String, Object>> bookings = classBookingRepository.findByUserId(userId).stream()
+                    .filter(b -> !"CANCELLED".equals(b.getStatus()))
+                    .map(b -> {
+                        Map<String, Object> m = new HashMap<>();
+                        m.put("bookingId", b.getId());
+                        m.put("status", b.getStatus());
+                        m.put("bookedAt", b.getBookedAt());
+                        var session = b.getClassSession();
+                        if (session != null) {
+                            m.put("sessionId", session.getId());
+                            m.put("name", session.getName());
+                            m.put("startTime", session.getStartTime());
+                            m.put("endTime", session.getEndTime());
+                            m.put("maxCapacity", session.getMaxCapacity());
+                            m.put("room", session.getRoom() != null ? session.getRoom().getName() : "");
+                            m.put("trainer", session.getTrainer() != null
+                                    ? session.getTrainer().getFirstName() + " " + session.getTrainer().getLastName()
+                                    : "");
+                        }
+                        return m;
+                    })
+                    .toList();
             return ResponseEntity.ok(bookings);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -160,61 +224,64 @@ public class SchedulingController {
     }
 
     // Member: Book a class
-    @PostMapping("/member/book")
-    public ResponseEntity<?> bookClass(@RequestBody Map<String, String> request) {
+    @PostMapping("/member/{userId}/book/{sessionId}")
+    public ResponseEntity<?> bookClass(@PathVariable UUID userId, @PathVariable UUID sessionId) {
         try {
-            UUID userId = UUID.fromString(request.get("userId"));
-            UUID classId = UUID.fromString(request.get("classId"));
-
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
-            com.gym.enterprise_system.entity.ClassSession session = classSessionRepository.findById(classId)
-                    .orElseThrow(() -> new IllegalArgumentException("Class not found"));
-
-            // Check if already booked
-            if (classBookingRepository.findByClassSessionIdAndUserId(classId, userId).isPresent()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "You are already booked for this class."));
-            }
-
-            // Create Booking
-            com.gym.enterprise_system.entity.ClassBooking booking = com.gym.enterprise_system.entity.ClassBooking
-                    .builder()
-                    .classSession(session)
-                    .user(user)
-                    .status("ENROLLED") // Trigger will handle WAITLIST promotion if full
-                    .build();
-
-            classBookingRepository.save(booking);
-
-            return ResponseEntity.ok(Map.of("message", "Successfully booked class: " + session.getName()));
+            String status = schedulingService.bookClass(userId, sessionId);
+            return ResponseEntity.ok(Map.of("message", "Class booked successfully.", "status", status));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // NEW: Member available classes (filtered by subscription)
-    @GetMapping("/member/{userId}/available-classes")
-    public ResponseEntity<?> getMemberAvailableClasses(@PathVariable UUID userId) {
+    // Member: Cancel a booking
+    @PostMapping("/member/{userId}/cancel/{sessionId}")
+    public ResponseEntity<?> cancelClass(@PathVariable UUID userId, @PathVariable UUID sessionId) {
         try {
-            // Fetch user subscriptions
-            List<com.gym.enterprise_system.entity.Subscription> subs = schedulingService.getUserSubscriptions(userId);
+            schedulingService.cancelClass(userId, sessionId);
+            return ResponseEntity.ok(Map.of("message", "Class cancelled successfully."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 
-            // Find the furthest end date
-            java.time.LocalDateTime maxEndDate = subs.stream()
-                    .map(com.gym.enterprise_system.entity.Subscription::getEndDate)
-                    .filter(java.util.Objects::nonNull)
-                    .max(java.time.LocalDateTime::compareTo)
-                    .orElse(java.time.LocalDateTime.now().plusDays(7)); // Or some default
+    // Admin: Reassign a trainer to a specific session via assign_trainer() stored
+    // function.
+    // Validates trainer role, updates class_sessions.trainer_id, and upserts
+    // commission.
+    @PostMapping("/admin/assign-trainer")
+    public ResponseEntity<?> assignTrainer(@RequestBody Map<String, String> request) {
+        try {
+            String sessionId = request.get("sessionId");
+            String trainerId = request.get("trainerId");
 
-            // Fetch all classes
-            List<com.gym.enterprise_system.entity.ClassSession> allClasses = classSessionRepository.findAll();
+            String resultJson = classSessionRepository.callAssignTrainer(sessionId, trainerId);
 
-            // Filter classes that start before maxEndDate
-            List<com.gym.enterprise_system.entity.ClassSession> filtered = allClasses.stream()
-                    .filter(cls -> cls.getStartTime().isBefore(maxEndDate))
-                    .sorted((a, b) -> a.getStartTime().compareTo(b.getStartTime()))
-                    .toList();
-            return ResponseEntity.ok(filtered);
+            JsonNode result = new ObjectMapper().readTree(resultJson);
+            if (!result.get("success").asBoolean()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", result.get("error").asText()));
+            }
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Trainer assigned successfully.",
+                    "hoursWorked", result.get("hoursWorked").asDouble(),
+                    "commissionAmount", result.get("commissionAmount").asDouble()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Trainer: Fetch own commission records and total earnings.
+    @GetMapping("/trainer/{trainerId}/commissions")
+    public ResponseEntity<?> getTrainerCommissions(@PathVariable UUID trainerId) {
+        try {
+            List<TrainerCommission> commissions = trainerCommissionRepository
+                    .findByTrainerIdOrderByCalculatedAtDesc(trainerId);
+            BigDecimal total = trainerCommissionRepository.getTotalCommissionByTrainerId(trainerId);
+            return ResponseEntity.ok(Map.of(
+                    "commissions", commissions,
+                    "total", total != null ? total : BigDecimal.ZERO));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -248,6 +315,148 @@ public class SchedulingController {
                 }
             }
             return ResponseEntity.ok(Map.of("message", "Synced " + plansSynced + " class plans. Sessions generated."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Trainer: View participants for a class session
+    @GetMapping("/trainer/{trainerId}/classes/{sessionId}/participants")
+    public ResponseEntity<?> getClassParticipants(@PathVariable UUID trainerId, @PathVariable UUID sessionId) {
+        try {
+            ClassSession session = classSessionRepository.findById(sessionId)
+                    .orElseThrow(() -> new IllegalArgumentException("Session not found"));
+            
+            LocalDateTime sessionTime = session.getStartTime();
+
+            // Find all active subscriptions that cover the session time
+            List<Map<String, Object>> participants = subscriptionRepository.findAll().stream()
+                    .filter(s -> "ACTIVE".equals(s.getStatus()))
+                    .filter(s -> s.getStartDate() != null && s.getEndDate() != null)
+                    .filter(s -> !sessionTime.isBefore(s.getStartDate()) && !sessionTime.isAfter(s.getEndDate()))
+                    .map(s -> {
+                        User user = s.getUser();
+                        Map<String, Object> m = new HashMap<>();
+                        m.put("id", user.getId());
+                        m.put("firstName", user.getFirstName());
+                        m.put("lastName", user.getLastName());
+                        m.put("photoUrl", user.getProfilePhotoPath() != null
+                                ? "http://localhost:8080" + user.getProfilePhotoPath()
+                                : "");
+                        return m;
+                    })
+                    // Distinct by user ID to avoid duplicates if someone has multiple plans
+                    .filter(distinctByKey(m -> (UUID) m.get("id")))
+                    .toList();
+
+            return ResponseEntity.ok(participants);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Helper for distinctBy
+    private static <T> java.util.function.Predicate<T> distinctByKey(java.util.function.Function<? super T, ?> keyExtractor) {
+        java.util.Set<Object> seen = java.util.concurrent.ConcurrentHashMap.newKeySet();
+        return t -> seen.add(keyExtractor.apply(t));
+    }
+
+    // Trainer: Mark attendance
+    @PostMapping("/trainer/{trainerId}/classes/{sessionId}/attendance")
+    public ResponseEntity<?> markAttendance(
+            @PathVariable UUID trainerId,
+            @PathVariable UUID sessionId,
+            @RequestBody Map<String, String> request) {
+        try {
+            UUID memberId = UUID.fromString(request.get("memberId"));
+            String status = request.get("status");
+            schedulingService.markAttendance(trainerId, sessionId, memberId, status);
+            return ResponseEntity.ok(Map.of("message", "Attendance marked as " + status));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Staff: Get all class sessions for today with trainer info
+    @GetMapping("/staff/today-classes")
+    public ResponseEntity<?> getTodayClasses() {
+        try {
+            LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+            LocalDateTime endOfDay = LocalDate.now().atTime(LocalTime.MAX);
+
+            List<Map<String, Object>> result = classSessionRepository.findAll().stream()
+                    .filter(s -> s.getStartTime() != null
+                            && !s.getStartTime().isBefore(startOfDay)
+                            && !s.getStartTime().isAfter(endOfDay))
+                    .sorted((a, b) -> a.getStartTime().compareTo(b.getStartTime()))
+                    .map(s -> {
+                        Map<String, Object> m = new HashMap<>();
+                        m.put("sessionId", s.getId());
+                        m.put("sessionName", s.getName());
+                        m.put("startTime", s.getStartTime());
+                        m.put("endTime", s.getEndTime());
+                        m.put("room", s.getRoom() != null ? s.getRoom().getName() : "");
+                        m.put("trainerId", s.getTrainer() != null ? s.getTrainer().getId() : null);
+                        m.put("trainerName", s.getTrainer() != null
+                                ? s.getTrainer().getFirstName() + " " + s.getTrainer().getLastName()
+                                : "Unassigned");
+                        m.put("trainerHourlyRate",
+                                s.getTrainer() != null && s.getTrainer().getHourlyRate() != null
+                                        ? s.getTrainer().getHourlyRate()
+                                        : BigDecimal.ZERO);
+                        return m;
+                    })
+                    .toList();
+
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Staff: Mark a trainer as present for a session — computes and saves allowance
+    @PostMapping("/staff/mark-trainer-attendance")
+    public ResponseEntity<?> markTrainerAttendance(@RequestBody Map<String, String> request) {
+        try {
+            UUID sessionId = UUID.fromString(request.get("sessionId"));
+            UUID trainerId = UUID.fromString(request.get("trainerId"));
+
+            var session = classSessionRepository.findById(sessionId)
+                    .orElseThrow(() -> new IllegalArgumentException("Session not found"));
+            var trainer = userRepository.findById(trainerId)
+                    .orElseThrow(() -> new IllegalArgumentException("Trainer not found"));
+
+            // Check if commission already exists for this session+trainer
+            boolean alreadyMarked = trainerCommissionRepository.findAll().stream()
+                    .anyMatch(c -> c.getTrainerId().equals(trainerId) && c.getSessionId().equals(sessionId));
+            if (alreadyMarked) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Attendance already marked for this trainer and session."));
+            }
+
+            // Calculate hours worked from session start/end
+            Duration duration = Duration.between(session.getStartTime(), session.getEndTime());
+            BigDecimal hoursWorked = BigDecimal.valueOf(duration.toMinutes())
+                    .divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
+
+            BigDecimal ratePerHour = trainer.getHourlyRate() != null ? trainer.getHourlyRate() : BigDecimal.ZERO;
+            BigDecimal commissionAmount = hoursWorked.multiply(ratePerHour);
+
+            TrainerCommission commission = TrainerCommission.builder()
+                    .trainerId(trainerId)
+                    .sessionId(sessionId)
+                    .hoursWorked(hoursWorked)
+                    .ratePerHour(ratePerHour)
+                    .commissionAmount(commissionAmount)
+                    .build();
+            trainerCommissionRepository.save(commission);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Attendance marked. Allowance added.",
+                    "trainerName", trainer.getFirstName() + " " + trainer.getLastName(),
+                    "hoursWorked", hoursWorked,
+                    "ratePerHour", ratePerHour,
+                    "commissionAmount", commissionAmount));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import org.hibernate.annotations.CreationTimestamp;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -53,6 +54,12 @@ public class User {
 
     @Column(name = "profile_photo_path")
     private String profilePhotoPath;
+
+    @Column(name = "current_status")
+    private String currentStatus;
+
+    @Column(name = "hourly_rate")
+    private BigDecimal hourlyRate;
 
     // THE GATEKEEPER CHECK: Returns true only if ALL required fields are filled
     public boolean isProfileComplete() {

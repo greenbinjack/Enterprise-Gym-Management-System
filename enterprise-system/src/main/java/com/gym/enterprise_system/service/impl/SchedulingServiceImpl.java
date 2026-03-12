@@ -3,6 +3,8 @@ package com.gym.enterprise_system.service.impl;
 import com.gym.enterprise_system.entity.*;
 import com.gym.enterprise_system.repository.*;
 import com.gym.enterprise_system.service.SchedulingService;
+import com.gym.enterprise_system.service.TrainerShiftService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +31,7 @@ public class SchedulingServiceImpl implements SchedulingService {
     private final MembershipPlanRepository planRepo;
     private final SubscriptionRepository subRepo; // Assuming you have this from Module 1
     private final NotificationRepository notifRepo;
+    private final TrainerShiftService trainerShiftService;
 
     // 1. ADMIN: Create Classes (Handles Recurring Loop)
     @Override
@@ -44,12 +47,32 @@ public class SchedulingServiceImpl implements SchedulingService {
         UUID recurringId = weeksToRepeat > 1 ? UUID.randomUUID() : null;
 
         for (int i = 0; i < weeksToRepeat; i++) {
+            LocalDateTime classStart = start.plusWeeks(i);
+            LocalDateTime classEnd = end.plusWeeks(i);
+
+            // Validate trainer shift availability for this class time
+            String dayOfWeek = classStart.getDayOfWeek().toString();
+            LocalTime classStartTime = classStart.toLocalTime();
+            LocalTime classEndTime = classEnd.toLocalTime();
+
+            boolean trainerAvailable = trainerShiftService.isTrainerAvailable(
+                    trainerId,
+                    dayOfWeek,
+                    classStartTime,
+                    classEndTime);
+
+            if (!trainerAvailable) {
+                throw new IllegalArgumentException(
+                        "Trainer is not available at " + dayOfWeek + " " + classStartTime +
+                                " to " + classEndTime + ". Please update trainer shifts first.");
+            }
+
             ClassSession session = ClassSession.builder()
                     .name(name)
                     .room(room)
                     .trainer(trainer)
-                    .startTime(start.plusWeeks(i))
-                    .endTime(end.plusWeeks(i))
+                    .startTime(classStart)
+                    .endTime(classEnd)
                     .maxCapacity(maxCapacity)
                     .recurringGroupId(recurringId)
                     .build();

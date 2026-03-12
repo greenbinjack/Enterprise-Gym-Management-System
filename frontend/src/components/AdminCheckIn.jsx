@@ -24,61 +24,81 @@ export default function AdminCheckIn() {
         <div className="p-8 max-w-7xl mx-auto h-full flex flex-col">
             <div className="mb-8">
                 <div>
-                    <h1 className="text-3xl font-extrabold text-gray-900">Access Control</h1>
-                    <p className="text-gray-500">Live facility roster</p>
+                    <h1 className="text-3xl font-extrabold text-gray-900 dark:text-cream">Access Control</h1>
+                    <p className="text-gray-500 dark:text-gray-400">Live facility roster</p>
                 </div>
             </div>
 
             {/* Live Roster Table */}
-            <div className="bg-white border text-left border-gray-200 shadow-sm rounded-2xl overflow-hidden flex-1 flex flex-col">
-                <div className="p-6 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-                    <h2 className="font-bold text-gray-900 text-lg flex items-center">
+            <div className="bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-800 text-left shadow-sm rounded-2xl overflow-hidden flex-1 flex flex-col">
+                <div className="p-6 bg-gray-50 dark:bg-darkBg border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                    <h2 className="font-bold text-gray-900 dark:text-cream text-lg flex items-center">
                         <span className="w-3 h-3 rounded-full bg-green-500 animate-pulse mr-3"></span>
                         Currently Inside
                     </h2>
-                    <span className="bg-blue-100 text-blue-800 py-1 px-3 rounded-full text-sm font-black">
+                    <span className="bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400 py-1 px-3 rounded-full text-sm font-black">
                         {activeMembers.length} Members
                     </span>
                 </div>
 
                 <div className="overflow-y-auto flex-1 p-0">
                     {activeMembers.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center py-20 text-gray-400">
+                        <div className="h-full flex flex-col items-center justify-center py-20 text-gray-400 dark:text-gray-500">
                             <span className="text-6xl mb-4">🏛️</span>
                             <p className="text-lg font-bold">The facility is currently empty.</p>
                         </div>
                     ) : (
                         <table className="w-full whitespace-nowrap">
-                            <thead className="bg-white sticky top-0 border-b border-gray-100">
+                            <thead className="bg-white dark:bg-darkCard sticky top-0 border-b border-gray-100 dark:border-gray-700">
                                 <tr>
-                                    <th className="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-wider text-left">Member</th>
-                                    <th className="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-wider text-left">Email Address</th>
-                                    <th className="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-wider text-right">Time Entered</th>
+                                    <th className="px-6 py-4 text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider text-left">Member</th>
+                                    <th className="px-6 py-4 text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider text-left">Role</th>
+                                    <th className="px-6 py-4 text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider text-left">Packages</th>
+                                    <th className="px-6 py-4 text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider text-left">Email Address</th>
+                                    <th className="px-6 py-4 text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Time Entered</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-50">
+                            <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                                 {activeMembers.map((member) => (
-                                    <tr key={member.checkInId} className="hover:bg-blue-50/50 transition-colors">
+                                    <tr key={member.checkInId} className="hover:bg-blue-50/50 dark:hover:bg-darkBg transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center">
-                                                <div className="h-10 w-10 flex-shrink-0 bg-gray-200 rounded-full overflow-hidden border border-gray-200">
+                                                <div className="h-10 w-10 flex-shrink-0 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden border border-gray-200 dark:border-gray-600">
                                                     {member.photoUrl ? (
                                                         <img className="h-full w-full object-cover" src={member.photoUrl} alt="" />
                                                     ) : (
-                                                        <div className="h-full w-full flex justify-center items-center text-gray-400 font-bold text-lg">
+                                                        <div className="h-full w-full flex justify-center items-center text-gray-400 dark:text-gray-500 font-bold text-lg">
                                                             {member.firstName.charAt(0)}
                                                         </div>
                                                     )}
                                                 </div>
                                                 <div className="ml-4">
-                                                    <div className="text-sm font-extrabold text-gray-900">{member.firstName} {member.lastName}</div>
+                                                    <div className="text-sm font-extrabold text-gray-900 dark:text-cream">{member.firstName} {member.lastName}</div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-500 font-medium">
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-black tracking-widest uppercase ${member.userType === 'MEMBER' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : member.userType === 'STAFF' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'}`}>
+                                                {member.userType || 'UNKNOWN'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {member.userType === 'MEMBER' && member.enrolledPackages?.length > 0 ? (
+                                                <div className="flex flex-wrap gap-1.5 max-w-[200px]">
+                                                    {member.enrolledPackages.map((pkg, idx) => (
+                                                        <span key={idx} className="bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border border-gray-200 dark:border-gray-700 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider truncate" title={pkg}>
+                                                            {pkg}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <span className="text-gray-400 dark:text-gray-600 text-xs italic font-medium">None</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 font-medium">
                                             {member.email}
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-500 font-bold text-right">
+                                        <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 font-bold text-right">
                                             {new Date(member.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </td>
                                     </tr>

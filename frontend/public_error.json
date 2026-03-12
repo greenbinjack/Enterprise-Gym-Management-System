@@ -1,0 +1,254 @@
+
+[35m[95mWarning:[39m[35m The [33mallowCypressEnv[39m[35m configuration option is enabled. This allows any browser code to read values from [33mCypress.env()[39m[35m. This is insecure and will be removed in a future major version.[39m
+[35m[39m
+[35m1. Replace [33mCypress.env()[39m[35m calls with [33mcy.env()[39m[35m (for sensitive values) or [33mCypress.expose()[39m[35m (for public configuration)[39m
+[35m2. Set [33mallowCypressEnv: false[39m[35m in your Cypress configuration to disable [33mCypress.env()[39m[35m[39m
+[35m[39m
+[35mLearn more: https://on.cypress.io/cypress-env-migration[39m
+[35m[39m
+
+[90m====================================================================================================[39m
+
+[0m  ([4m[1mRun Starting[22m[24m)[0m
+
+[90m  ┌[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┐[39m
+[90m  │[39m [90mCypress:[39m        15.11.0                                                                        [90m│[39m
+[90m  │[39m [90mBrowser:[39m        Electron 138 [90m(headless)[39m                                                        [90m│[39m
+[90m  │[39m [90mNode Version:[39m   [0mv24.13.1 [90m(C:\Program Files\nodejs\node.exe)[39m[0m                                    [90m│[39m
+[90m  │[39m [90mSpecs:[39m          [0m1 found (public-access.cy.js)[0m                                                  [90m│[39m
+[90m  │[39m [90mSearched:[39m       [0mE:\enterprise-system\frontend\cypress\e2e\public-access.cy.js[0m                  [90m│[39m
+[90m  └[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┘[39m
+
+
+[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m
+                                                                                                    
+  Running:  [90mpublic-access.cy.js[39m                                                             [90m(1 of 1)[39m
+{
+  "stats": {
+    "suites": 1,
+    "tests": 4,
+    "passes": 3,
+    "pending": 0,
+    "failures": 1,
+    "start": "2026-03-12T17:53:35.221Z",
+    "end": "2026-03-12T17:53:43.177Z",
+    "duration": 7956
+  },
+  "tests": [
+    {
+      "title": "should display the public Home page to unauthenticated users",
+      "fullTitle": "Public Access & Authentication Redirects should display the public Home page to unauthenticated users",
+      "file": null,
+      "duration": 2608,
+      "currentRetry": 0,
+      "err": {}
+    },
+    {
+      "title": "should allow navigation to About and Careers",
+      "fullTitle": "Public Access & Authentication Redirects should allow navigation to About and Careers",
+      "file": null,
+      "duration": 1059,
+      "currentRetry": 0,
+      "err": {}
+    },
+    {
+      "title": "should redirect unauthenticated users away from protected routes",
+      "fullTitle": "Public Access & Authentication Redirects should redirect unauthenticated users away from protected routes",
+      "file": null,
+      "duration": 3152,
+      "currentRetry": 0,
+      "err": {}
+    },
+    {
+      "title": "should redirect authenticated users away from public routes",
+      "fullTitle": "Public Access & Authentication Redirects should redirect authenticated users away from public routes",
+      "file": null,
+      "duration": 950,
+      "currentRetry": 0,
+      "err": {
+        "message": "expected 'fake-jwt' to be null",
+        "name": "AssertionError",
+        "stack": "AssertionError: expected 'fake-jwt' to be null\n    at Object.proxyGetter [as get] (http://localhost:5173/__cypress/runner/cypress_runner.js:81162:22)\n    at Context.eval (webpack://frontend/./cypress/e2e/public-access.cy.js:50:64)\n    at getRet (http://localhost:5173/__cypress/runner/cypress_runner.js:122806:20)\n    at tryCatcher (http://localhost:5173/__cypress/runner/cypress_runner.js:1777:23)\n    at Promise.attempt.Promise.try (http://localhost:5173/__cypress/runner/cypress_runner.js:4285:29)",
+        "parsedStack": [
+          {
+            "message": "AssertionError: expected 'fake-jwt' to be null",
+            "whitespace": ""
+          },
+          {
+            "function": "Object.proxyGetter [as get]",
+            "fileUrl": "http://localhost:5173/__cypress/runner/cypress_runner.js",
+            "originalFile": "http://localhost:5173/__cypress/runner/cypress_runner.js",
+            "line": 81162,
+            "column": 22,
+            "whitespace": "    "
+          },
+          {
+            "function": "Context.eval",
+            "fileUrl": "http://localhost:5173/__cypress/tests?p=cypress\\e2e\\public-access.cy.js",
+            "originalFile": "webpack://frontend/./cypress/e2e/public-access.cy.js",
+            "relativeFile": "cypress/e2e/public-access.cy.js",
+            "absoluteFile": "E:/enterprise-system/frontend/cypress/e2e/public-access.cy.js",
+            "line": 50,
+            "column": 64,
+            "whitespace": "    "
+          },
+          {
+            "function": "getRet",
+            "fileUrl": "http://localhost:5173/__cypress/runner/cypress_runner.js",
+            "originalFile": "http://localhost:5173/__cypress/runner/cypress_runner.js",
+            "line": 122806,
+            "column": 20,
+            "whitespace": "    "
+          },
+          {
+            "function": "tryCatcher",
+            "fileUrl": "http://localhost:5173/__cypress/runner/cypress_runner.js",
+            "originalFile": "http://localhost:5173/__cypress/runner/cypress_runner.js",
+            "line": 1777,
+            "column": 23,
+            "whitespace": "    "
+          },
+          {
+            "function": "Promise.attempt.Promise.try",
+            "fileUrl": "http://localhost:5173/__cypress/runner/cypress_runner.js",
+            "originalFile": "http://localhost:5173/__cypress/runner/cypress_runner.js",
+            "line": 4285,
+            "column": 29,
+            "whitespace": "    "
+          }
+        ]
+      }
+    }
+  ],
+  "pending": [],
+  "failures": [
+    {
+      "title": "should redirect authenticated users away from public routes",
+      "fullTitle": "Public Access & Authentication Redirects should redirect authenticated users away from public routes",
+      "file": null,
+      "currentRetry": 0,
+      "err": {
+        "message": "expected 'fake-jwt' to be null",
+        "name": "AssertionError",
+        "stack": "AssertionError: expected 'fake-jwt' to be null\n    at Object.proxyGetter [as get] (http://localhost:5173/__cypress/runner/cypress_runner.js:81162:22)\n    at Context.eval (webpack://frontend/./cypress/e2e/public-access.cy.js:50:64)\n    at getRet (http://localhost:5173/__cypress/runner/cypress_runner.js:122806:20)\n    at tryCatcher (http://localhost:5173/__cypress/runner/cypress_runner.js:1777:23)\n    at Promise.attempt.Promise.try (http://localhost:5173/__cypress/runner/cypress_runner.js:4285:29)",
+        "parsedStack": [
+          {
+            "message": "AssertionError: expected 'fake-jwt' to be null",
+            "whitespace": ""
+          },
+          {
+            "function": "Object.proxyGetter [as get]",
+            "fileUrl": "http://localhost:5173/__cypress/runner/cypress_runner.js",
+            "originalFile": "http://localhost:5173/__cypress/runner/cypress_runner.js",
+            "line": 81162,
+            "column": 22,
+            "whitespace": "    "
+          },
+          {
+            "function": "Context.eval",
+            "fileUrl": "http://localhost:5173/__cypress/tests?p=cypress\\e2e\\public-access.cy.js",
+            "originalFile": "webpack://frontend/./cypress/e2e/public-access.cy.js",
+            "relativeFile": "cypress/e2e/public-access.cy.js",
+            "absoluteFile": "E:/enterprise-system/frontend/cypress/e2e/public-access.cy.js",
+            "line": 50,
+            "column": 64,
+            "whitespace": "    "
+          },
+          {
+            "function": "getRet",
+            "fileUrl": "http://localhost:5173/__cypress/runner/cypress_runner.js",
+            "originalFile": "http://localhost:5173/__cypress/runner/cypress_runner.js",
+            "line": 122806,
+            "column": 20,
+            "whitespace": "    "
+          },
+          {
+            "function": "tryCatcher",
+            "fileUrl": "http://localhost:5173/__cypress/runner/cypress_runner.js",
+            "originalFile": "http://localhost:5173/__cypress/runner/cypress_runner.js",
+            "line": 1777,
+            "column": 23,
+            "whitespace": "    "
+          },
+          {
+            "function": "Promise.attempt.Promise.try",
+            "fileUrl": "http://localhost:5173/__cypress/runner/cypress_runner.js",
+            "originalFile": "http://localhost:5173/__cypress/runner/cypress_runner.js",
+            "line": 4285,
+            "column": 29,
+            "whitespace": "    "
+          }
+        ]
+      }
+    }
+  ],
+  "passes": [
+    {
+      "title": "should display the public Home page to unauthenticated users",
+      "fullTitle": "Public Access & Authentication Redirects should display the public Home page to unauthenticated users",
+      "file": null,
+      "duration": 2608,
+      "currentRetry": 0,
+      "err": {}
+    },
+    {
+      "title": "should allow navigation to About and Careers",
+      "fullTitle": "Public Access & Authentication Redirects should allow navigation to About and Careers",
+      "file": null,
+      "duration": 1059,
+      "currentRetry": 0,
+      "err": {}
+    },
+    {
+      "title": "should redirect unauthenticated users away from protected routes",
+      "fullTitle": "Public Access & Authentication Redirects should redirect unauthenticated users away from protected routes",
+      "file": null,
+      "duration": 3152,
+      "currentRetry": 0,
+      "err": {}
+    }
+  ]
+}
+[31m  ([4m[1mResults[22m[24m)[39m
+
+[90m  ┌[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┐[39m
+[90m  │[39m [90mTests:[39m        [31m4[39m                                                                                [90m│[39m
+[90m  │[39m [90mPassing:[39m      [31m3[39m                                                                                [90m│[39m
+[90m  │[39m [90mFailing:[39m      [31m1[39m                                                                                [90m│[39m
+[90m  │[39m [90mPending:[39m      [31m0[39m                                                                                [90m│[39m
+[90m  │[39m [90mSkipped:[39m      [31m0[39m                                                                                [90m│[39m
+[90m  │[39m [90mScreenshots:[39m  [31m1[39m                                                                                [90m│[39m
+[90m  │[39m [90mVideo:[39m        [31mfalse[39m                                                                            [90m│[39m
+[90m  │[39m [90mDuration:[39m     [31m7 seconds[39m                                                                        [90m│[39m
+[90m  │[39m [90mSpec Ran:[39m     [31m[31mpublic-access.cy.js[31m[39m                                                              [90m│[39m
+[90m  └[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┘[39m
+
+
+[33m  ([4m[1mScreenshots[22m[24m)[39m
+
+[90m [39m -  [0mE:\enterprise-system\frontend\cypress\screenshots\public-access.cy.js\Public Acc[0m     [90m[90m(1280x720)[90m[39m
+[90m [39m    [0mess & Authentication Redirects -- should redirect authenticated users away from [0m               
+[90m [39m    [0mpublic routes (failed).png[0m                                                                     
+
+
+[90m====================================================================================================[39m
+
+[0m  ([4m[1mRun Finished[22m[24m)[0m
+
+
+[90m   [39m    [90mSpec[39m                                              [90mTests[39m  [90mPassing[39m  [90mFailing[39m  [90mPending[39m  [90mSkipped[39m [90m [39m
+[90m  ┌[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┐[39m
+[90m  │[39m [31m✖[39m  [0mpublic-access.cy.js[0m                      [90m00:07[39m        [0m4[0m        [32m3[39m        [31m1[39m        [90m-[39m        [90m-[39m [90m│[39m
+[90m  └[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┘[39m
+[90m   [39m [31m✖[39m  [31m1 of 1 failed (100%)[39m                     [90m00:07[39m        [0m4[0m        [32m3[39m        [31m1[39m        [90m-[39m        [90m-[39m [90m [39m
+
+[90m----------------------------------------------------------------------------------------------------[39m
+
+  Debug faster with full visibility.
+
+  Record to Cypress Cloud and get instant access to full test details and replays.
+  Inspect the DOM, network events, and console logs exactly as they ran in CI.
+
+  >> [36mhttps://on.cypress.io/cloud-get-started[39m
+
+[90m----------------------------------------------------------------------------------------------------[39m

@@ -94,49 +94,6 @@ VALUES (
         'BASE_MEMBERSHIP'
     );
 
--- 5. Insert a Dummy Membership Plan (Class Package type for scheduling from V16)
-INSERT INTO
-    membership_plans (
-        id,
-        name,
-        monthly_price,
-        is_active,
-        category,
-        description,
-        discount_level,
-        recurring_day_of_week,
-        recurring_start_time,
-        duration_minutes,
-        allocated_room_id,
-        allocated_seats
-    )
-SELECT
-    gen_random_uuid (),
-    'Morning Bootcamp',
-    99.99,
-    TRUE,
-    'CLASS_PACKAGE',
-    'High intensity morning bootcamp led by our expert trainers.',
-    0,
-    'MONDAY',
-    '07:00',
-    60,
-    (
-        SELECT id
-        FROM rooms
-        WHERE
-            name = 'Functional Training Zone'
-        LIMIT 1
-    ),
-    10
-WHERE
-    NOT EXISTS (
-        SELECT 1
-        FROM membership_plans
-        WHERE
-            name = 'Morning Bootcamp'
-    );
-
 -- 6. Link Trainers to the Plan
 INSERT INTO
     membership_plan_trainers (plan_id, trainer_id)

@@ -15,10 +15,10 @@ export default function ResetPassword() {
     // If there's no token in the URL, don't even show the form
     if (!token) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="bg-white p-8 rounded-lg shadow border text-center">
+            <div className="min-h-screen bg-gray-50 dark:bg-darkBg flex items-center justify-center">
+                <div className="bg-white dark:bg-darkCard p-8 rounded-lg shadow border border-gray-200 dark:border-gray-800 text-center">
                     <h2 className="text-2xl font-bold text-red-600 mb-2">Invalid Link</h2>
-                    <p className="text-gray-600">No reset token provided. Please request a new password reset link.</p>
+                    <p className="text-gray-600 dark:text-gray-400">No reset token provided. Please request a new password reset link.</p>
                 </div>
             </div>
         );
@@ -51,46 +51,46 @@ export default function ResetPassword() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-gray-50 dark:bg-darkBg flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-8 px-10 shadow sm:rounded-lg border border-gray-200">
-                    <h2 className="text-2xl font-extrabold text-gray-900 mb-6">Create New Password</h2>
+                <div className="bg-white dark:bg-darkCard py-8 px-10 shadow sm:rounded-lg border border-gray-200 dark:border-gray-800">
+                    <h2 className="text-2xl font-extrabold text-gray-900 dark:text-cream mb-6">Create New Password</h2>
 
                     {status.type === 'success' && (
-                        <div className="bg-green-50 text-green-700 p-4 rounded-md mb-6 text-sm border border-green-200 font-medium">
+                        <div className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 p-4 rounded-md mb-6 text-sm border border-green-200 dark:border-green-800 font-medium">
                             {status.text} Redirecting to login...
                         </div>
                     )}
                     {status.type === 'error' && (
-                        <div className="bg-red-50 text-red-700 p-4 rounded-md mb-6 text-sm border border-red-200 font-medium">
+                        <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 p-4 rounded-md mb-6 text-sm border border-red-200 dark:border-red-800 font-medium">
                             {status.text}
                         </div>
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New Password</label>
                             <input
                                 type="password"
                                 placeholder="Enter your new password"
                                 minLength="6"
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-darkCard text-gray-900 dark:text-cream focus:ring-2 focus:ring-olive dark:focus:ring-lightSage focus:outline-none"
                                 required
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm New Password</label>
                             <input
                                 type="password"
                                 placeholder="Confirm your new password"
                                 minLength="6"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
-                                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${confirmPassword && newPassword !== confirmPassword
-                                    ? 'border-red-300 focus:ring-red-500'
-                                    : 'border-gray-300 focus:ring-blue-500'
+                                className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-darkCard text-gray-900 dark:text-cream focus:outline-none focus:ring-2 ${confirmPassword && newPassword !== confirmPassword
+                                    ? 'border-red-300 dark:border-red-700 focus:ring-red-500'
+                                    : 'border-gray-300 dark:border-gray-700 focus:ring-olive dark:focus:ring-lightSage'
                                     }`}
                                 required
                             />

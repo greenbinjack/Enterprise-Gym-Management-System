@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import { Scanner } from '@yudiel/react-qr-scanner';
+import MemberStatus from './MemberStatus';
 
 export default function MemberDashboard() {
     const currentUser = JSON.parse(localStorage.getItem('user'));
@@ -30,9 +31,10 @@ export default function MemberDashboard() {
                 const active = subRes.data.filter(sub => sub.status === 'ACTIVE' || sub.status === 'GRACE_PERIOD');
                 setActiveSubscriptions(active);
 
-                // 3. Fetch Scheduled Classes
-                const classRes = await api.get(`/api/scheduling/member/${currentUser.id}/bookings`);
-                setUpcomingClasses(classRes.data);
+                // 3. Fetch upcoming classes from subscription schedule
+                const classRes = await api.get(`/api/scheduling/member/${currentUser.id}/available-classes`);
+                // Show only the next 5 upcoming sessions on the dashboard
+                setUpcomingClasses((classRes.data || []).slice(0, 5));
 
             } catch (error) {
                 console.error("Failed to load dashboard data", error);
@@ -118,8 +120,8 @@ export default function MemberDashboard() {
                     <div className="bg-white dark:bg-darkCard rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 flex flex-col items-center text-center transition-transform hover:-translate-y-1">
                         <h3 className="font-bold text-gray-900 dark:text-cream text-lg mb-3">Digital Access Pass</h3>
                         <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black mb-8 tracking-widest uppercase shadow-sm ${hasAnyActivePlan
-                                ? 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800/50'
-                                : 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800/50'
+                            ? 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800/50'
+                            : 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800/50'
                             }`}>
                             <span className={`w-2 h-2 rounded-full ${hasAnyActivePlan ? 'bg-green-500' : 'bg-red-500'}`}></span>
                             STATUS: {accessStatus}
@@ -161,10 +163,10 @@ export default function MemberDashboard() {
 
                         {scanResult && (
                             <div className={`p-8 rounded-2xl mb-6 w-full flex flex-col items-center justify-center aspect-square text-center shadow-inner ${scanResult.type === 'error'
-                                    ? 'bg-red-50 border border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800/50 dark:text-red-400'
-                                    : scanResult.status === 'ENTER'
-                                        ? 'bg-green-50 border border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800/50 dark:text-green-400'
-                                        : 'bg-blue-50 border border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-800/50 dark:text-blue-400'
+                                ? 'bg-red-50 border border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800/50 dark:text-red-400'
+                                : scanResult.status === 'ENTER'
+                                    ? 'bg-green-50 border border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800/50 dark:text-green-400'
+                                    : 'bg-blue-50 border border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-800/50 dark:text-blue-400'
                                 }`}>
                                 <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-5 bg-white/50 dark:bg-black/20 shadow-sm`}>
                                     <span className="text-4xl">
@@ -186,8 +188,8 @@ export default function MemberDashboard() {
                                     onClick={() => setIsScanningMode(true)}
                                     disabled={!user.isProfileComplete || !hasAnyActivePlan}
                                     className={`w-full font-bold py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-2 ${!user.isProfileComplete || !hasAnyActivePlan
-                                            ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed hidden'
-                                            : 'bg-olive hover:bg-olive/90 text-white dark:bg-lightSage dark:text-darkBg dark:hover:bg-lightSage/90 hover:scale-[1.02]'
+                                        ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed hidden'
+                                        : 'bg-olive hover:bg-olive/90 text-white dark:bg-lightSage dark:text-darkBg dark:hover:bg-lightSage/90 hover:scale-[1.02]'
                                         }`}
                                 >
                                     <span className="text-xl">📷</span> Enable Camera Scanner
@@ -208,6 +210,9 @@ export default function MemberDashboard() {
                             </div>
                         )}
                     </div>
+
+                    {/* Member Status Card
+                    <MemberStatus /> */}
 
                     {/* Active Subscriptions Display */}
                     <div className="bg-white dark:bg-darkCard rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 flex flex-col h-[280px]">
@@ -254,11 +259,9 @@ export default function MemberDashboard() {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-olive/10 dark:bg-lightSage/10 flex items-center justify-center text-xl">🗓️</div>
-                            <h3 className="font-bold text-xl text-gray-900 dark:text-cream tracking-tight">My Schedule This Week</h3>
+                            <h3 className="font-bold text-xl text-gray-900 dark:text-cream tracking-tight">My Schedule This Month</h3>
                         </div>
-                        <Link to="/member/calendar" className="bg-gray-50 hover:bg-gray-100 dark:bg-darkBg dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm font-bold px-4 py-2 rounded-xl transition-colors flex items-center gap-2">
-                            <span>Book Classes</span> <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                        </Link>
+
                     </div>
 
                     <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
@@ -284,7 +287,7 @@ export default function MemberDashboard() {
                                 const isWaitlisted = cls.status === 'WAITLISTED';
 
                                 return (
-                                    <div key={cls.id} className="flex flex-col sm:flex-row justify-between sm:items-center p-5 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-darkBg shadow-sm hover:shadow-md hover:border-olive/30 dark:hover:border-lightSage/30 transition-all group">
+                                    <div key={cls.sessionId} className="flex flex-col sm:flex-row justify-between sm:items-center p-5 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-darkBg shadow-sm hover:shadow-md hover:border-olive/30 dark:hover:border-lightSage/30 transition-all group">
                                         <div className="flex items-start gap-5">
 
                                             {/* Date Badge */}
@@ -296,11 +299,8 @@ export default function MemberDashboard() {
                                             <div className="pt-1 min-w-0">
                                                 <div className="flex flex-wrap items-center gap-2 mb-1.5">
                                                     <h4 className="font-black text-gray-900 dark:text-cream text-lg leading-tight truncate">{cls.name}</h4>
-                                                    <span className={`text-[10px] uppercase font-black px-2.5 py-1 rounded-full border shadow-sm whitespace-nowrap ${isWaitlisted
-                                                            ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50'
-                                                            : 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800/50'
-                                                        }`}>
-                                                        {isWaitlisted ? '⏳ Waitlisted' : '✅ Confirmed'}
+                                                    <span className="text-[10px] uppercase font-black px-2.5 py-1 rounded-full border shadow-sm whitespace-nowrap bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800/50">
+                                                        ✅ Enrolled
                                                     </span>
                                                 </div>
 
@@ -312,12 +312,12 @@ export default function MemberDashboard() {
                                                     <div className="hidden sm:block w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700"></div>
                                                     <p className="flex items-center gap-1.5 truncate">
                                                         <svg className="w-4 h-4 opacity-70 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                                                        <span className="truncate">{cls.trainer}</span>
+                                                        <span className="truncate">{cls.trainerFirstName} {cls.trainerLastName}</span>
                                                     </p>
                                                     <div className="hidden sm:block w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700"></div>
                                                     <p className="flex items-center gap-1.5 truncate">
                                                         <svg className="w-4 h-4 opacity-70 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                                        <span className="truncate">{cls.room}</span>
+                                                        <span className="truncate">{cls.roomName}</span>
                                                     </p>
                                                 </div>
                                             </div>

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
 
 export default function MemberStore() {
+    const navigate = useNavigate();
     const [plans, setPlans] = useState([]);
     const [ownedPlanIds, setOwnedPlanIds] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -33,7 +35,23 @@ export default function MemberStore() {
         if (currentUser?.id) fetchStoreData();
     }, [currentUser?.id]);
 
-    const handleBuy = async (planId, cycle) => {
+    const handleBuy = async (planId) => {
+        // Check profile completeness before allowing purchase
+        try {
+            const profileRes = await api.get(`/api/member/profile/${currentUser.id}`);
+            if (!profileRes.data.isProfileComplete) {
+                alert("You must upload a photo and add your phone number before you can purchase plans or scan into the gym.");
+                navigate('/member/profile');
+                return;
+            }
+        } catch (error) {
+            console.error("Failed to verify profile completeness", error);
+            alert("Could not verify your profile. Please try again.");
+            return;
+        }
+
+        const cycle = billingCycle === 'monthly' ? 'MONTHLY' : 'YEARLY';
+
         setIsProcessing(true);
         setProcessingPlanId(planId);
         try {
@@ -59,7 +77,12 @@ export default function MemberStore() {
 
     const getYearlyPrice = (plan) => {
         if (plan.yearlyPrice && plan.yearlyPrice > 0) return plan.yearlyPrice;
-        return plan.monthlyPrice * 12 * 0.85;
+        return Math.round(plan.monthlyPrice * 12 * 0.85);
+    };
+
+    const getYearlySavingPercent = (plan) => {
+        const yearly = getYearlyPrice(plan);
+        return Math.round((1 - yearly / (plan.monthlyPrice * 12)) * 100);
     };
 
     const basePackages = plans.filter(p => p.category === 'BASE_MEMBERSHIP').sort((a, b) => a.monthlyPrice - b.monthlyPrice);
@@ -68,7 +91,7 @@ export default function MemberStore() {
     if (isLoading) {
         return (
             <div className="flex justify-center items-center min-h-[500px]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-olive dark:border-lightSage"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-olive dark:border-lightSage" />
             </div>
         );
     }
@@ -77,28 +100,44 @@ export default function MemberStore() {
         <div className="p-6 md:p-10 max-w-7xl mx-auto h-full overflow-y-auto w-full">
             {/* Header */}
             <div className="text-center mb-14">
-                <span className="text-olive dark:text-lightSage font-bold uppercase tracking-widest text-sm mb-4 block">Membership Store</span>
+                <span className="text-olive dark:text-lightSage font-bold uppercase tracking-widest text-sm mb-4 block">
+                    Membership Store
+                </span>
                 <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-cream tracking-tighter mb-4">
-                    Choose Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-olive to-brown dark:from-lightSage dark:to-cream">Journey.</span>
+                    Choose Your{' '}
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-olive to-brown dark:from-lightSage dark:to-cream">
+                        Journey.
+                    </span>
                 </h1>
                 <p className="text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
                     Select the perfect plan to match your fitness ambitions. All memberships include full-facility access.
                 </p>
 
                 {/* Billing Toggle */}
-                <div className="flex justify-center items-center space-x-4 mt-8">
-                    <span className={`text-sm tracking-widest uppercase transition-colors ${billingCycle === 'monthly' ? 'font-black text-gray-900 dark:text-cream' : 'text-gray-400 dark:text-gray-500 font-bold'}`}>
-                        Monthly
-                    </span>
+                <div className="inline-flex items-center mt-8 p-1.5 rounded-full bg-white dark:bg-darkCard shadow-md border border-gray-200 dark:border-gray-800">
                     <button
-                        onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
-                        className="relative w-16 h-8 bg-gray-200 dark:bg-gray-800 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-olive dark:focus:ring-offset-darkBg shadow-inner"
+                        onClick={() => setBillingCycle('monthly')}
+                        className={`px-6 py-2.5 rounded-full text-sm font-black uppercase tracking-wider transition-all duration-300 ${
+                            billingCycle === 'monthly'
+                                ? 'bg-gray-900 dark:bg-cream text-white dark:text-darkBg shadow-sm'
+                                : 'text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                        }`}
                     >
-                        <div className={`absolute top-1 left-1 w-6 h-6 bg-olive dark:bg-lightSage rounded-full transition-transform duration-300 shadow-md ${billingCycle === 'yearly' ? 'translate-x-8' : ''}`}></div>
+                        Monthly
                     </button>
-                    <span className={`text-sm tracking-widest uppercase flex items-center gap-2 transition-colors ${billingCycle === 'yearly' ? 'font-black text-gray-900 dark:text-cream' : 'text-gray-400 dark:text-gray-500 font-bold'}`}>
-                        Yearly <span className="text-[10px] bg-olive/10 dark:bg-lightSage/20 text-olive dark:text-lightSage border border-olive/20 dark:border-lightSage/30 px-2.5 py-1 rounded-full animate-pulse">Save 15%</span>
-                    </span>
+                    <button
+                        onClick={() => setBillingCycle('yearly')}
+                        className={`px-6 py-2.5 rounded-full text-sm font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 ${
+                            billingCycle === 'yearly'
+                                ? 'bg-gray-900 dark:bg-cream text-white dark:text-darkBg shadow-sm'
+                                : 'text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                        }`}
+                    >
+                        Yearly
+                        <span className="text-[10px] bg-olive/20 text-olive dark:bg-lightSage/20 dark:text-lightSage px-2 py-0.5 rounded-full font-black">
+                            Save More
+                        </span>
+                    </button>
                 </div>
             </div>
 
@@ -119,13 +158,13 @@ export default function MemberStore() {
                                     isProcessing={isProcessing && processingPlanId === plan.id}
                                     onBuy={handleBuy}
                                     getYearlyPrice={getYearlyPrice}
+                                    getYearlySavingPercent={getYearlySavingPercent}
                                 />
                             ))}
                         </div>
                     </div>
                 )}
 
-                {/* Divider */}
                 {basePackages.length > 0 && classPackages.length > 0 && (
                     <div className="w-full max-w-lg mx-auto h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent" />
                 )}
@@ -146,6 +185,7 @@ export default function MemberStore() {
                                     isProcessing={isProcessing && processingPlanId === plan.id}
                                     onBuy={handleBuy}
                                     getYearlyPrice={getYearlyPrice}
+                                    getYearlySavingPercent={getYearlySavingPercent}
                                 />
                             ))}
                         </div>
@@ -164,14 +204,16 @@ export default function MemberStore() {
     );
 }
 
-function PlanCard({ plan, billingCycle, isOwned, isProcessing, onBuy, getYearlyPrice }) {
-    const isPremium = plan.category === 'BASE_MEMBERSHIP' && plan.monthlyPrice > 35;
-    const priceDisplay = billingCycle === 'monthly' ? plan.monthlyPrice : getYearlyPrice(plan);
+function PlanCard({ plan, billingCycle, isOwned, isProcessing, onBuy, getYearlyPrice, getYearlySavingPercent }) {
+    const isPremium = plan.category === 'BASE_MEMBERSHIP' && plan.monthlyPrice > 5000;
+    const isYearly = billingCycle === 'yearly';
+    const priceDisplay = isYearly ? getYearlyPrice(plan) : plan.monthlyPrice;
+    const savingPercent = getYearlySavingPercent(plan);
 
     return (
         <div className={`relative bg-white dark:bg-darkCard rounded-[2rem] shadow-xl flex flex-col p-8 transition-all duration-300
             ${isPremium
-                ? 'border-2 border-olive dark:border-lightSage transform md:-translate-y-4 shadow-olive/10 z-10'
+                ? 'border-2 border-olive dark:border-lightSage md:-translate-y-4 shadow-olive/10 z-10'
                 : 'border border-gray-100 dark:border-gray-800 hover:-translate-y-2 hover:shadow-2xl'
             }`}
         >
@@ -189,17 +231,31 @@ function PlanCard({ plan, billingCycle, isOwned, isProcessing, onBuy, getYearlyP
                 </div>
             )}
 
-            <h3 className="text-2xl font-black text-gray-900 dark:text-cream mb-3">{plan.name}</h3>
+            {/* Plan name */}
+            <h3 className="text-2xl font-black text-gray-900 dark:text-cream mb-1">{plan.name}</h3>
 
-            <div className="mb-6 flex items-baseline">
-                <span className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter">
+            {/* Price */}
+            <div className="mt-4 mb-2 flex items-end gap-1">
+                <span className="text-5xl font-black text-gray-900 dark:text-white tracking-tighter">
                     ৳{priceDisplay?.toLocaleString()}
                 </span>
-                <span className="text-gray-400 dark:text-gray-500 font-bold ml-2 text-sm">/ {billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
+                <span className="text-gray-400 dark:text-gray-500 font-bold text-sm mb-1.5">
+                    / {isYearly ? 'yr' : 'mo'}
+                </span>
+            </div>
+
+            {/* Savings badge — only when yearly is selected */}
+            <div className="h-7 mb-4">
+                {isYearly && savingPercent > 0 && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-black text-olive dark:text-lightSage bg-olive/10 dark:bg-lightSage/10 border border-olive/20 dark:border-lightSage/20 px-3 py-1 rounded-full">
+                        🎉 Save {savingPercent}% vs monthly
+                    </span>
+                )}
             </div>
 
             <div className="w-full h-px bg-gradient-to-r from-gray-200 via-gray-300 to-transparent dark:from-gray-800 dark:via-gray-700 mb-6" />
 
+            {/* Features */}
             <ul className="space-y-4 flex-1 mb-8">
                 {plan.category === 'BASE_MEMBERSHIP' ? (
                     isPremium ? (
@@ -223,8 +279,7 @@ function PlanCard({ plan, billingCycle, isOwned, isProcessing, onBuy, getYearlyP
                         <FeatureItem
                             title="Schedule"
                             sub={`Every ${plan.recurringDayOfWeek
-                                ? plan.recurringDayOfWeek.split(',').map(d =>
-                                    d.trim().charAt(0) + d.trim().slice(1).toLowerCase()).join(', ')
+                                ? plan.recurringDayOfWeek.split(',').map(d => d.trim().charAt(0) + d.trim().slice(1).toLowerCase()).join(', ')
                                 : 'TBD'}`}
                         />
                         <FeatureItem title="Time" sub={`${plan.recurringStartTime || 'TBD'} (${plan.durationMinutes || 60} mins)`} />
@@ -233,41 +288,33 @@ function PlanCard({ plan, billingCycle, isOwned, isProcessing, onBuy, getYearlyP
                 )}
             </ul>
 
-            {/* Buttons */}
-            <div className="space-y-3">
-                <button
-                    onClick={() => onBuy(plan.id, 'MONTHLY')}
-                    disabled={isProcessing || isOwned}
-                    className={`w-full font-bold py-3 px-4 rounded-xl shadow-sm transition-all focus:outline-none flex items-center justify-center gap-2
-                        ${isOwned
-                            ? 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 cursor-not-allowed'
-                            : isPremium
-                                ? 'bg-olive hover:bg-olive/90 text-white dark:bg-lightSage dark:text-darkBg dark:hover:bg-lightSage/90 hover:scale-[1.02]'
-                                : 'bg-gray-900 text-white hover:bg-black dark:bg-gray-800 dark:text-cream dark:hover:bg-gray-700 hover:scale-[1.02]'
-                        }`}
-                >
-                    {isOwned ? '✓ Currently Active' : isProcessing ? 'Connecting...' : 'Pay Monthly'}
-                </button>
-
-                {!isOwned && (
-                    <button
-                        onClick={() => onBuy(plan.id, 'YEARLY')}
-                        disabled={isProcessing}
-                        className="w-full bg-white dark:bg-darkCard border-2 border-olive dark:border-lightSage text-olive dark:text-lightSage hover:bg-olive hover:text-white dark:hover:bg-lightSage dark:hover:text-darkBg disabled:opacity-50 font-bold py-2.5 rounded-xl transition-all text-sm"
-                    >
-                        Pay Yearly — ৳{getYearlyPrice(plan)?.toLocaleString()}
-                    </button>
+            {/* CTA */}
+            <button
+                onClick={() => !isOwned && onBuy(plan.id)}
+                disabled={isOwned || isProcessing}
+                className={`w-full py-4 rounded-xl font-black text-base transition-all duration-300 flex items-center justify-center gap-2
+                    ${isOwned
+                        ? 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500 cursor-not-allowed'
+                        : isPremium
+                            ? 'bg-olive text-white hover:bg-olive/90 dark:bg-lightSage dark:text-darkBg dark:hover:bg-lightSage/90 hover:scale-[1.01]'
+                            : 'bg-gray-900 text-white hover:bg-black dark:bg-gray-800 dark:text-cream dark:hover:bg-gray-700 hover:scale-[1.01]'
+                    } disabled:transform-none`}
+            >
+                {isOwned ? '✓ Currently Active' : isProcessing ? (
+                    <><span className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" /> Connecting...</>
+                ) : (
+                    `Get Started ${isYearly ? '(Yearly)' : '(Monthly)'}`
                 )}
-            </div>
+            </button>
         </div>
     );
 }
 
 function FeatureItem({ title, sub, highlight }) {
     return (
-        <li className={`flex items-start ${highlight ? 'text-olive dark:text-lightSage font-bold' : 'text-gray-700 dark:text-gray-300 font-medium'} text-sm`}>
-            <div className="w-5 h-5 rounded-full bg-olive/10 dark:bg-lightSage/10 text-olive dark:text-lightSage flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <li className={`flex items-start text-sm ${highlight ? 'text-olive dark:text-lightSage font-bold' : 'text-gray-700 dark:text-gray-300 font-medium'}`}>
+            <div className="w-5 h-5 rounded-full bg-olive/10 dark:bg-lightSage/10 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                <svg className="w-3 h-3 text-olive dark:text-lightSage" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
                 </svg>
             </div>

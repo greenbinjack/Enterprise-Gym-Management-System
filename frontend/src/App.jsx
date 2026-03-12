@@ -33,6 +33,7 @@ import StaffProfile from './components/StaffProfile';
 import UserDirectory from './components/UserDirectory';
 import EquipmentManagement from './components/EquipmentManagement';
 import PublicLayout from './components/PublicLayout';
+import TrainerShiftManager from './components/TrainerShiftManager';
 
 // ... inside your <Routes> block add:
 
@@ -89,6 +90,7 @@ function App() {
               <Route path="/admin/recruitment" element={<AdminRecruitmentBoard />} />
               <Route path="/admin/inventory" element={<AdminInventory />} />
               <Route path="/admin/staff" element={<AdminManageStaff />} />
+              {/* <Route path="/admin/trainer-shifts" element={<TrainerShiftManager />} /> */}
             </Route>
           </Route>
 

@@ -21,4 +21,6 @@ public class CheckInReportDto {
     private String photoUrl;
     private LocalDateTime checkInTime;
     private LocalDateTime checkOutTime;
+    private String userType;
+    private java.util.List<String> enrolledPackages;
 }

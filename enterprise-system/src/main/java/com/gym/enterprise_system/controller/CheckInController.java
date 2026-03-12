@@ -2,13 +2,20 @@ package com.gym.enterprise_system.controller;
 
 import com.gym.enterprise_system.dto.CheckInReportDto;
 import com.gym.enterprise_system.entity.CheckIn;
+import com.gym.enterprise_system.entity.Role;
+import com.gym.enterprise_system.entity.StaffPayment;
 import com.gym.enterprise_system.entity.User;
 import com.gym.enterprise_system.repository.CheckInRepository;
+import com.gym.enterprise_system.repository.StaffPaymentRepository;
 import com.gym.enterprise_system.repository.UserRepository;
+import com.gym.enterprise_system.repository.SubscriptionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +31,8 @@ public class CheckInController {
 
     private final CheckInRepository checkInRepository;
     private final UserRepository userRepository;
+    private final SubscriptionRepository subscriptionRepository;
+    private final StaffPaymentRepository staffPaymentRepository;
 
     // Simulate QR Scanner at Front Desk
     @PostMapping("/scan")
@@ -67,6 +76,27 @@ public class CheckInController {
             CheckIn activeCheckIn = latestCheckIn.get();
             activeCheckIn.setCheckOutTime(LocalDateTime.now());
             checkInRepository.save(activeCheckIn);
+
+            // Staff Pay Calculation
+            if (user.getRole() == Role.STAFF) {
+                BigDecimal hourlyRate = user.getHourlyRate() != null ? user.getHourlyRate() : BigDecimal.ZERO;
+                if (hourlyRate.compareTo(BigDecimal.ZERO) > 0) {
+                    Duration duration = Duration.between(activeCheckIn.getCheckInTime(), activeCheckIn.getCheckOutTime());
+                    long seconds = duration.getSeconds();
+                    BigDecimal hours = BigDecimal.valueOf(seconds).divide(BigDecimal.valueOf(3600), 2, RoundingMode.HALF_UP);
+                    BigDecimal totalAmount = hours.multiply(hourlyRate).setScale(2, RoundingMode.HALF_UP);
+
+                    StaffPayment payment = StaffPayment.builder()
+                            .user(user)
+                            .checkIn(activeCheckIn)
+                            .hoursWorked(hours)
+                            .hourlyRate(hourlyRate)
+                            .totalAmount(totalAmount)
+                            .build();
+                    staffPaymentRepository.save(payment);
+                }
+            }
+
             return ResponseEntity.ok(Map.of(
                     "status", "EXIT",
                     "message", "Goodbye, " + user.getFirstName() + "!",
@@ -90,17 +120,30 @@ public class CheckInController {
     public ResponseEntity<List<CheckInReportDto>> getActiveCheckIns() {
         List<CheckInReportDto> activeUsers = checkInRepository.findByCheckOutTimeIsNull()
                 .stream()
-                .map(c -> CheckInReportDto.builder()
-                        .checkInId(c.getId())
-                        .userId(c.getUser().getId())
-                        .firstName(c.getUser().getFirstName())
-                        .lastName(c.getUser().getLastName())
-                        .email(c.getUser().getEmail())
-                        .photoUrl(c.getUser().getProfilePhotoPath() != null
-                                ? "http://localhost:8080" + c.getUser().getProfilePhotoPath()
-                                : null)
-                        .checkInTime(c.getCheckInTime())
-                        .build())
+                .map(c -> {
+                    List<String> packages = new java.util.ArrayList<>();
+                    if ("MEMBER".equals(c.getUser().getRole().name())) {
+                        subscriptionRepository.findByUserIdAndStatus(c.getUser().getId(), "ACTIVE")
+                                .ifPresent(sub -> {
+                                    if (sub.getPlan() != null) {
+                                        packages.add(sub.getPlan().getName());
+                                    }
+                                });
+                    }
+                    return CheckInReportDto.builder()
+                            .checkInId(c.getId())
+                            .userId(c.getUser().getId())
+                            .firstName(c.getUser().getFirstName())
+                            .lastName(c.getUser().getLastName())
+                            .email(c.getUser().getEmail())
+                            .photoUrl(c.getUser().getProfilePhotoPath() != null
+                                    ? "http://localhost:8080" + c.getUser().getProfilePhotoPath()
+                                    : null)
+                            .checkInTime(c.getCheckInTime())
+                            .userType(c.getUser().getRole().name())
+                            .enrolledPackages(packages)
+                            .build();
+                })
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(activeUsers);

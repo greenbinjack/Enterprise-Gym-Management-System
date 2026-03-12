@@ -51,20 +51,18 @@ export default function Navbar() {
 
     return (
         <nav className={navClass}>
-            <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 group cursor-pointer">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-olive to-brown dark:from-lightSage dark:to-olive flex items-center justify-center shadow-lg transform group-hover:scale-105 transition-transform overflow-hidden">
-                    <img src="/vortex-logo.png" alt="Vortex Logo" className="w-full h-full object-cover" />
+                <div className="flex-shrink-0 flex items-center gap-3 cursor-pointer" onClick={() => { setIsMobileMenuOpen(false); navigate('/'); }}>
+                    <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm">
+                        <img src="/vortex-logo.png" alt="Vortex Logo" className="w-full h-full object-cover" />
+                    </div>
+                    <span className="font-black text-gray-900 dark:text-cream tracking-tighter text-2xl hidden sm:block">
+                        VORTEX
+                    </span>
                 </div>
-                <div className="text-xl md:text-2xl font-black tracking-tighter text-gray-900 dark:text-cream">
-                    VORTEX
-                </div>
-            </Link>
 
             <div className="hidden md:flex items-center space-x-8">
                 <Link to="/about" className="text-gray-600 dark:text-gray-300 hover:text-olive dark:hover:text-lightSage font-bold transition-colors">About Us</Link>
-                {!userRole && (
-                    <Link to="/plans" className="text-gray-600 dark:text-gray-300 hover:text-olive dark:hover:text-lightSage font-bold transition-colors">Memberships</Link>
-                )}
+                <Link to="/plans" className="text-gray-600 dark:text-gray-300 hover:text-olive dark:hover:text-lightSage font-bold transition-colors">Memberships</Link>
                 <Link to="/careers" className="text-gray-600 dark:text-gray-300 hover:text-olive dark:hover:text-lightSage font-bold transition-colors">Careers</Link>
 
                 <div className="h-6 w-px bg-gray-300 dark:bg-gray-700 mx-2"></div>
@@ -119,9 +117,7 @@ export default function Navbar() {
                 <div className="md:hidden absolute top-full left-0 w-full bg-cream dark:bg-darkBg shadow-xl border-t border-gray-200 dark:border-gray-800 transition-all duration-300">
                     <div className="flex flex-col py-4 px-6 space-y-4 shadow-inner">
                         <Link to="/about" onClick={() => setIsMobileMenuOpen(false)} className="text-lg text-gray-800 dark:text-gray-200 hover:text-olive dark:hover:text-lightSage font-bold transition-colors py-2 border-b border-gray-100 dark:border-gray-800">About Us</Link>
-                        {!userRole && (
-                            <Link to="/plans" onClick={() => setIsMobileMenuOpen(false)} className="text-lg text-gray-800 dark:text-gray-200 hover:text-olive dark:hover:text-lightSage font-bold transition-colors py-2 border-b border-gray-100 dark:border-gray-800">Memberships</Link>
-                        )}
+                        <Link to="/plans" onClick={() => setIsMobileMenuOpen(false)} className="text-lg text-gray-800 dark:text-gray-200 hover:text-olive dark:hover:text-lightSage font-bold transition-colors py-2 border-b border-gray-100 dark:border-gray-800">Memberships</Link>
                         <Link to="/careers" onClick={() => setIsMobileMenuOpen(false)} className="text-lg text-gray-800 dark:text-gray-200 hover:text-olive dark:hover:text-lightSage font-bold transition-colors py-2 border-b border-gray-100 dark:border-gray-800">Careers</Link>
 
                         <div className="pt-4 flex flex-col space-y-4">

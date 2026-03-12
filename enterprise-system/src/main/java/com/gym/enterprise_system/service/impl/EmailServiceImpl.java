@@ -74,7 +74,7 @@ public class EmailServiceImpl implements EmailService {
                 "A staff account has been created for you at Enterprise Gym.\n\n" +
                 "Your temporary password is: " + tempPassword + "\n\n" +
                 "Please log in and update your details at:\n" +
-                "http://localhost:5173/staff/login\n\n" +
+                "http://localhost:5173/login\n\n" +
                 "Best regards,\n" +
                 "Enterprise Gym Administration";
 

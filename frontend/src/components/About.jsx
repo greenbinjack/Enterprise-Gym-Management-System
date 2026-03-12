@@ -22,9 +22,13 @@ export default function About() {
                             should be.
                         </span>
                     </h1>
-                    <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed font-medium">
-                        Founded in 2024, Vortex isn't just a place to sweat. We are a sanctuary for those who demand excellence in every aspect of their lives.
-                    </p>
+                    <div className="mb-24">
+                        <h2 className="text-3xl font-black text-gray-900 dark:text-cream tracking-tight mb-6">Our Philosophy</h2>
+                        <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
+                        Founded in 2024, Vortex isn't just a place to sweat. We are a sanctuary for those who demand excellence in every aspect of their lives. 
+                        We believe that physical exceptionalism is the foundation for success in all other areas.
+                        </p>
+                    </div>
                 </div>
 
                 {/* Feature Grid */}

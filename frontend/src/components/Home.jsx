@@ -25,7 +25,7 @@ export default function Home() {
                     <h1 className="text-6xl md:text-8xl font-black text-gray-900 dark:text-white tracking-tighter mb-8 leading-[1.1]">
                         Strength meets <br className="hidden md:block" />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-olive via-brown to-olive dark:from-lightSage dark:via-cream dark:to-lightSage animate-gradient bg-300%">
-                            Elegance.
+                            Elegance
                         </span>
                     </h1>
 
@@ -83,14 +83,13 @@ export default function Home() {
                         <div className="order-1 lg:order-2 space-y-8">
                             <div>
                                 <h2 className="text-olive dark:text-lightSage font-bold uppercase tracking-widest text-sm mb-3">About Us</h2>
-                                <h3 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-cream leading-tight">
-                                    Redefining what a gym <span className="text-olive dark:text-lightSage">should be.</span>
-                                </h3>
+                                <div className="bg-olive/10 dark:bg-lightSage/10 p-8 rounded-[2rem] border border-olive/20 dark:border-lightSage/20">
+                                    <h3 className="text-2xl font-black text-gray-900 dark:text-cream tracking-tight mb-4">The Vortex Difference</h3>
+                                    <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
+                                        Founded in 2024, Vortex isn't just a place to sweat. We are a sanctuary for those who demand excellence in every aspect of their lives. We've combined country-club aesthetics with hardcore training methodologies to create an unparalleled fitness environment.
+                                    </p>
+                                </div>
                             </div>
-
-                            <p className="text-gray-600 dark:text-gray-400 text-lg leading-relaxed">
-                                Founded in 2024, Vortex isn't just a place to sweat. We are a sanctuary for those who demand excellence in every aspect of their lives. We've combined country-club aesthetics with hardcore training methodologies to create an unparalleled fitness environment.
-                            </p>
 
                             <ul className="space-y-4">
                                 {[

@@ -42,7 +42,7 @@ export default function StaffLayout() {
             {/* Mobile Header */}
             <div className="md:hidden fixed top-0 w-full bg-slate-900 border-b border-slate-800 z-50 px-4 py-3 flex justify-between items-center shadow-lg">
                 <h1 className="text-lg font-black tracking-tight text-white">
-                    ENTERPRISE<span className="text-olive">GYM</span>
+                    VORTEX
                 </h1>
                 <div className="flex items-center gap-4">
                     <button onClick={toggleTheme} className="text-lg" aria-label="Toggle Theme">
@@ -69,7 +69,7 @@ export default function StaffLayout() {
                 <div className="hidden md:flex p-6 border-b border-slate-800 justify-between items-center">
                     <div>
                         <h1 className="text-xl font-black tracking-tight text-white">
-                            ENTERPRISE<span className="text-olive">GYM</span>
+                            VORTEX
                         </h1>
                         <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-widest font-bold">Staff Portal</p>
                     </div>
@@ -120,12 +120,7 @@ export default function StaffLayout() {
                 </nav>
 
                 <div className="p-4 border-t border-slate-800">
-                    <Link
-                        to="/"
-                        className="w-full mb-2 flex items-center justify-center px-4 py-3 font-bold text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-colors"
-                    >
-                        <span className="mr-3">🌐</span> Return Home
-                    </Link>
+
                     <button
                         onClick={handleLogout}
                         className="w-full flex items-center justify-center px-4 py-3 font-bold text-slate-400 hover:bg-red-500/10 hover:text-red-400 rounded-xl transition-colors"

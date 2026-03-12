@@ -41,6 +41,28 @@ public class AdminOperationsController {
         return ResponseEntity.ok(roomRepository.findAll());
     }
 
+    @PutMapping("/facilities/rooms/{roomId}")
+    public ResponseEntity<?> updateRoom(@PathVariable UUID roomId, @RequestBody Room updatedRoom) {
+        Room room = roomRepository.findById(roomId).orElseThrow(() -> new IllegalArgumentException("Room not found"));
+        if (updatedRoom.getName() != null && !updatedRoom.getName().trim().isEmpty()) {
+            room.setName(updatedRoom.getName());
+        }
+        if (updatedRoom.getTotalCapacity() != null && updatedRoom.getTotalCapacity() > 0) {
+            room.setTotalCapacity(updatedRoom.getTotalCapacity());
+        }
+        roomRepository.save(room);
+        return ResponseEntity.ok(room);
+    }
+
+    @DeleteMapping("/facilities/rooms/{roomId}")
+    public ResponseEntity<?> deleteRoom(@PathVariable UUID roomId) {
+        if (!roomRepository.existsById(roomId)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Room not found."));
+        }
+        roomRepository.deleteById(roomId);
+        return ResponseEntity.ok(Map.of("message", "Room successfully deleted."));
+    }
+
     // --- USER DIRECTORY & ROLE MANAGEMENT ---
     @GetMapping("/users")
     public ResponseEntity<?> getAllUsers() {

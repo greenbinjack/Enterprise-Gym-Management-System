@@ -1,9 +1,12 @@
 package com.gym.enterprise_system.repository;
 
+import com.gym.enterprise_system.entity.Role;
 import com.gym.enterprise_system.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,4 +18,20 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     boolean existsByEmail(String email);
 
     Long countByIsActiveTrue();
+
+    /**
+     * Find all active users
+     */
+    List<User> findByIsActiveTrue();
+
+    /**
+     * Find all trainers
+     */
+    List<User> findByRole(Role role);
+
+    /**
+     * Find all active trainers
+     */
+    @Query("SELECT u FROM User u WHERE u.role = com.gym.enterprise_system.entity.Role.TRAINER AND u.isActive = true")
+    List<User> findActiveTrainers();
 }
