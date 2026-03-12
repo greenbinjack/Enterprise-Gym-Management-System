@@ -1,11 +1,30 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 
 export default function Navbar() {
     const { theme, toggleTheme } = useTheme();
+    const navigate = useNavigate();
     const [scrolled, setScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [userRole, setUserRole] = useState(localStorage.getItem('userRole'));
+
+    const getDashboardPath = (role) => {
+        if (role === 'ADMIN') return '/admin/dashboard';
+        if (role === 'TRAINER') return '/trainer/dashboard';
+        if (role === 'STAFF') return '/staff/dashboard';
+        if (role === 'MEMBER') return '/member/dashboard';
+        return '/login';
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('userId');
+        setUserRole(null);
+        navigate('/');
+    };
 
     useEffect(() => {
         const handleScroll = () => {
@@ -13,6 +32,16 @@ export default function Navbar() {
         };
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    useEffect(() => {
+        const syncAuthState = () => setUserRole(localStorage.getItem('userRole'));
+        window.addEventListener('storage', syncAuthState);
+        window.addEventListener('focus', syncAuthState);
+        return () => {
+            window.removeEventListener('storage', syncAuthState);
+            window.removeEventListener('focus', syncAuthState);
+        };
     }, []);
 
     const navClass = `fixed top-0 w-full z-50 transition-all duration-300 ${scrolled
@@ -33,12 +62,12 @@ export default function Navbar() {
 
             <div className="hidden md:flex items-center space-x-8">
                 <Link to="/about" className="text-gray-600 dark:text-gray-300 hover:text-olive dark:hover:text-lightSage font-bold transition-colors">About Us</Link>
-                <Link to="/plans" className="text-gray-600 dark:text-gray-300 hover:text-olive dark:hover:text-lightSage font-bold transition-colors">Memberships</Link>
+                {!userRole && (
+                    <Link to="/plans" className="text-gray-600 dark:text-gray-300 hover:text-olive dark:hover:text-lightSage font-bold transition-colors">Memberships</Link>
+                )}
                 <Link to="/careers" className="text-gray-600 dark:text-gray-300 hover:text-olive dark:hover:text-lightSage font-bold transition-colors">Careers</Link>
 
                 <div className="h-6 w-px bg-gray-300 dark:bg-gray-700 mx-2"></div>
-
-                <Link to="/login" className="text-gray-900 dark:text-cream hover:text-olive dark:hover:text-lightSage font-black transition-colors">Sign In</Link>
 
                 <button
                     onClick={toggleTheme}
@@ -48,9 +77,21 @@ export default function Navbar() {
                     {theme === 'light' ? '🌙' : '☀️'}
                 </button>
 
-                <Link to="/register" className="px-6 py-2.5 bg-gray-900 text-white dark:bg-cream dark:text-darkBg font-black rounded-xl shadow-lg hover:shadow-xl hover:bg-black dark:hover:bg-white transform hover:-translate-y-0.5 transition-all">
-                    Join Now
-                </Link>
+                {userRole ? (
+                    <>
+                        <Link to={getDashboardPath(userRole)} className="text-gray-900 dark:text-cream hover:text-olive dark:hover:text-lightSage font-black transition-colors">Dashboard</Link>
+                        <button onClick={handleLogout} className="px-6 py-2.5 bg-gray-900 text-white dark:bg-cream dark:text-darkBg font-black rounded-xl shadow-lg hover:shadow-xl hover:bg-black dark:hover:bg-white transform hover:-translate-y-0.5 transition-all">
+                            Logout
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <Link to="/login" className="text-gray-900 dark:text-cream hover:text-olive dark:hover:text-lightSage font-black transition-colors">Sign In</Link>
+                        <Link to="/register" className="px-6 py-2.5 bg-gray-900 text-white dark:bg-cream dark:text-darkBg font-black rounded-xl shadow-lg hover:shadow-xl hover:bg-black dark:hover:bg-white transform hover:-translate-y-0.5 transition-all">
+                            Join Now
+                        </Link>
+                    </>
+                )}
             </div>
 
             {/* Mobile Menu Button  */}
@@ -78,12 +119,31 @@ export default function Navbar() {
                 <div className="md:hidden absolute top-full left-0 w-full bg-cream dark:bg-darkBg shadow-xl border-t border-gray-200 dark:border-gray-800 transition-all duration-300">
                     <div className="flex flex-col py-4 px-6 space-y-4 shadow-inner">
                         <Link to="/about" onClick={() => setIsMobileMenuOpen(false)} className="text-lg text-gray-800 dark:text-gray-200 hover:text-olive dark:hover:text-lightSage font-bold transition-colors py-2 border-b border-gray-100 dark:border-gray-800">About Us</Link>
-                        <Link to="/plans" onClick={() => setIsMobileMenuOpen(false)} className="text-lg text-gray-800 dark:text-gray-200 hover:text-olive dark:hover:text-lightSage font-bold transition-colors py-2 border-b border-gray-100 dark:border-gray-800">Memberships</Link>
+                        {!userRole && (
+                            <Link to="/plans" onClick={() => setIsMobileMenuOpen(false)} className="text-lg text-gray-800 dark:text-gray-200 hover:text-olive dark:hover:text-lightSage font-bold transition-colors py-2 border-b border-gray-100 dark:border-gray-800">Memberships</Link>
+                        )}
                         <Link to="/careers" onClick={() => setIsMobileMenuOpen(false)} className="text-lg text-gray-800 dark:text-gray-200 hover:text-olive dark:hover:text-lightSage font-bold transition-colors py-2 border-b border-gray-100 dark:border-gray-800">Careers</Link>
 
                         <div className="pt-4 flex flex-col space-y-4">
-                            <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="w-full text-center py-3 text-gray-900 dark:text-cream border-2 border-gray-900 dark:border-cream rounded-xl font-bold hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Sign In</Link>
-                            <Link to="/register" onClick={() => setIsMobileMenuOpen(false)} className="w-full text-center py-3 bg-gray-900 text-white dark:bg-cream dark:text-darkBg font-black rounded-xl shadow-lg hover:shadow-xl transition-all">Join Now</Link>
+                            {userRole ? (
+                                <>
+                                    <Link to={getDashboardPath(userRole)} onClick={() => setIsMobileMenuOpen(false)} className="w-full text-center py-3 text-gray-900 dark:text-cream border-2 border-gray-900 dark:border-cream rounded-xl font-bold hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Dashboard</Link>
+                                    <button
+                                        onClick={() => {
+                                            setIsMobileMenuOpen(false);
+                                            handleLogout();
+                                        }}
+                                        className="w-full text-center py-3 bg-gray-900 text-white dark:bg-cream dark:text-darkBg font-black rounded-xl shadow-lg hover:shadow-xl transition-all"
+                                    >
+                                        Logout
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="w-full text-center py-3 text-gray-900 dark:text-cream border-2 border-gray-900 dark:border-cream rounded-xl font-bold hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Sign In</Link>
+                                    <Link to="/register" onClick={() => setIsMobileMenuOpen(false)} className="w-full text-center py-3 bg-gray-900 text-white dark:bg-cream dark:text-darkBg font-black rounded-xl shadow-lg hover:shadow-xl transition-all">Join Now</Link>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>

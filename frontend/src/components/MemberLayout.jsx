@@ -116,6 +116,12 @@ export default function MemberLayout() {
                 </nav>
 
                 <div className="p-4 border-t border-slate-800">
+                    <Link
+                        to="/"
+                        className="w-full mb-2 flex items-center justify-center px-4 py-3 font-bold text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-colors"
+                    >
+                        <span className="mr-3">🌐</span> Return Home
+                    </Link>
                     <button
                         onClick={handleLogout}
                         className="w-full flex items-center justify-center px-4 py-3 font-bold text-slate-400 hover:bg-red-500/10 hover:text-red-400 rounded-xl transition-colors"

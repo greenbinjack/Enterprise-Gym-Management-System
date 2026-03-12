@@ -97,6 +97,12 @@ export default function AdminLayout() {
                 </nav>
 
                 <div className="p-4 border-t border-slate-800">
+                    <Link
+                        to="/"
+                        className="w-full mb-2 flex items-center justify-center px-4 py-3 font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+                    >
+                        <span className="mr-3">🌐</span> Return Home
+                    </Link>
                     <button
                         onClick={handleLogout}
                         className="w-full flex items-center justify-center px-4 py-3 font-bold text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"

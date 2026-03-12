@@ -36,6 +36,28 @@ import PublicLayout from './components/PublicLayout';
 
 // ... inside your <Routes> block add:
 
+const getDashboardPath = (role) => {
+  if (role === 'ADMIN') return '/admin/dashboard';
+  if (role === 'TRAINER') return '/trainer/dashboard';
+  if (role === 'STAFF') return '/staff/dashboard';
+  if (role === 'MEMBER') return '/member/dashboard';
+  return '/login';
+};
+
+function PublicPlansRoute() {
+  const role = localStorage.getItem('userRole');
+
+  if (!role) {
+    return <Plans />;
+  }
+
+  if (role === 'MEMBER') {
+    return <Navigate to="/member/store" replace />;
+  }
+
+  return <Navigate to={getDashboardPath(role)} replace />;
+}
+
 function App() {
   return (
     <Router>
@@ -47,7 +69,7 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/plans" element={<Plans />} />
+            <Route path="/plans" element={<PublicPlansRoute />} />
             <Route path="/careers" element={<Careers />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />

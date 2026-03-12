@@ -61,7 +61,7 @@ export default function About() {
                             <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=1470&auto=format&fit=crop" alt="Gym training area" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                         </div>
                         <div className="h-64 md:h-80 rounded-3xl overflow-hidden shadow-lg group lg:col-span-2">
-                            <img src="https://images.unsplash.com/photo-1593079831268-3381b0c1239b?q=80&w=1469&auto=format&fit=crop" alt="Cardio equipment" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                            <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1470&auto=format&fit=crop" alt="Cardio equipment" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                         </div>
                         <div className="h-64 md:h-80 rounded-3xl overflow-hidden shadow-lg group">
                             <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1470&auto=format&fit=crop" alt="Recovery room" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
