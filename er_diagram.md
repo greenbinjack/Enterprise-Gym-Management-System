@@ -14,6 +14,8 @@ erDiagram
         VARCHAR phone
         TEXT address
         VARCHAR profile_photo_path
+        VARCHAR current_status
+        NUMERIC hourly_rate
     }
 
     rooms {
@@ -135,6 +137,37 @@ erDiagram
         TIMESTAMP created_at
     }
 
+    trainer_shifts {
+        UUID id PK
+        UUID trainer_id FK
+        VARCHAR shift_name
+        VARCHAR day_of_week
+        TIME start_time
+        TIME end_time
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    trainer_commissions {
+        UUID id PK
+        UUID trainer_id FK
+        UUID session_id FK
+        NUMERIC hours_worked
+        NUMERIC rate_per_hour
+        NUMERIC commission_amount
+        TIMESTAMP calculated_at
+    }
+
+    staff_payments {
+        UUID id PK
+        UUID user_id FK
+        UUID check_in_id FK
+        NUMERIC hours_worked
+        NUMERIC hourly_rate
+        NUMERIC total_amount
+        TIMESTAMP created_at
+    }
+
     %% Relationships
     users ||--o{ subscriptions : "has"
     users ||--o{ invoices_payments : "pays"
@@ -143,6 +176,9 @@ erDiagram
     users ||--o{ notifications : "receives"
     users ||--o{ password_reset_tokens : "requests"
     users ||--o{ trainer_reviews : "is reviewed as"
+    users ||--o{ trainer_shifts : "has shift"
+    users ||--o{ trainer_commissions : "earns"
+    users ||--o{ staff_payments : "receives payment"
 
     membership_plans ||--o{ subscriptions : "subscribed via"
     membership_plans ||--o{ invoices_payments : "billed for"
@@ -153,6 +189,8 @@ erDiagram
     rooms ||--o{ class_sessions : "hosts"
     users ||--o{ class_sessions : "leads as trainer"
     class_sessions ||--o{ class_bookings : "booked in"
+    class_sessions ||--o{ trainer_commissions : "generates"
+    check_ins ||--o{ staff_payments : "calculates"
 ```
 
 ---

@@ -1,0 +1,19 @@
+\contentsline {section}{\numberline {1}Problem, Scope, and Project Overview}{2}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Problem Statement}{2}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Project Overview}{2}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Scope}{2}{subsection.1.3}%
+\contentsline {section}{\numberline {2}List of Features}{3}{section.2}%
+\contentsline {section}{\numberline {3}Tools and Technologies Used}{4}{section.3}%
+\contentsline {section}{\numberline {4}Database Design}{5}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Core Design Principles and Normalization}{5}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Key Entities and Relationships}{5}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Diagram and Visuals}{6}{subsection.4.3}%
+\contentsline {section}{\numberline {5}Advanced Queries, Procedural SQL, and Concepts}{7}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Database Triggers}{7}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Stored PL/pgSQL Functions}{10}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Advanced Analytical SQL Queries}{13}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.4}Advanced Concepts Summary}{16}{subsection.5.4}%
+\contentsline {section}{\numberline {6}Limitations of the Project}{17}{section.6}%
+\contentsline {section}{\numberline {7}Modifications to Initial Scope \& Design}{17}{section.7}%
+\contentsline {section}{\numberline {8}Individual Contribution}{18}{section.8}%
+\contentsline {section}{\numberline {9}Github Link}{18}{section.9}%

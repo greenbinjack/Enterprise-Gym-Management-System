@@ -43,4 +43,4 @@ sslcommerz:
 
 
 # .\netstat.exe -ano | .\findstr :8080
-# Stop-Process -Id 6512 -Force
+# Stop-Process -Id 5132 -For  ce
