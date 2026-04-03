@@ -7,38 +7,38 @@
 
 ---
 
-## 🚀 Project Overview
+## Project Overview
 
 Vortex Gym is a centralized, full-stack enterprise gym management system where administrators oversee facility operations, and members utilize a 100% self-service portal for onboarding, class booking, and payments. The platform allows owners to carefully manage facility resources, subscription lifecycles, and trainer schedules to prevent overlaps and optimize revenue. The system includes dynamic, database-driven elements, such as automated class waitlisting, touchless QR attendance verification, real-time trainer shift validation, and SQL-automated payroll computations.
 
 ---
 
-## ✨ High-Level System Modules & Features
+## High-Level System Modules & Features
 
 The system is categorized into five core business modules, distributed dynamically via a strict Role-Based Access Control (RBAC) architecture to meet the specific needs of Members, Trainers, Staff, and Admins.
 
-### 1️⃣ Acquisition & Onboarding
+### 1. Acquisition & Onboarding
 - **100% Self-Service Member Enrollment**: Frictionless onboarding allowing new users to scan a QR code at the facility, select a membership tier, and securely check out. The system instantly provisions an active digital entry pass without any staff intervention.
 - **Automated Trainer Recruitment Pipeline**: A staged application portal where prospective trainers upload credentials. Upon administrative approval, the system automatically provisions their employee profile, assigns global roles, and triggers onboarding communications.
 
-### 2️⃣ Access Control & Daily Operations
+### 2. Access Control & Daily Operations
 - **Digital Bouncer (Automated Check-In)**: Members scan their digital barcodes at front-desk turnstiles. The system verifies active subscription states in milliseconds, triggering visual access indicators for the staff.
 - **The Staff Live Monitor**: Front desk clerks operate as floor managers using iPads linked to real-time WebSocket check-in feeds, enabling them to troubleshoot and assist members proactively.
 
-### 3️⃣ Scheduling & Capacity Management
+### 3. Scheduling & Capacity Management
 - **Bulletproof Master Scheduling**: Administrative grids assigning trainers and rooms instantly. The system proactively blocks impossible double-bookings and prevents trainers from being scheduled outside their contracted hours.
 - **Dynamic Member Bookings & Auto-Waitlists**: Members join classes directly via their mobile dashboard. If a room hits maximum capacity, overflow members are rolled smoothly onto a dynamic waitlist and auto-promoted when spots free up.
 - **Trainer PT Portals**: Trainers utilize mobile-friendly portals to log attendance rosters and record detailed 1-on-1 personal training metrics (weights, reps, private notes) directly into their clients' profiles.
 
-### 4️⃣ Facility Maintenance
+### 4. Facility Maintenance
 - **Real-Time Equipment Health Tracking**: An internal ticketing system for floor staff to immediately flag malfunctioning equipment via mobile dashboards, instantly alerting administrative command centers for vendor dispatch.
 
-### 5️⃣ Administration & Analytics
+### 5. Administration & Analytics
 - **Financial & Operations Command Center**: High-level dashboards for business owners detailing Monthly Recurring Revenue (MRR), Peak Gym Hour utilization, and Trainer Popularity metrics, entirely parsed from perfectly-synchronized raw transaction data.
 
 ---
 
-## 🧠 Technical Highlights
+## Technical Highlights
 
 While the modules above define the *user experience*, the architecture powering them is deeply engineered for flawless execution.
 
@@ -58,7 +58,7 @@ Instead of relying on standard CRUD operations and backend logic loops, this sys
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Backend Infrastructure
 - **Java 21 & Spring Boot 3**: Robust REST API ecosystem (WebMVC, Data JPA, Validation).
@@ -78,7 +78,7 @@ Instead of relying on standard CRUD operations and backend logic loops, this sys
 
 ---
 
-## ⚙️ Setup & Configuration Guide
+## Setup & Configuration Guide
 
 ### 1. Database & SMTP Configuration (`application.yaml`)
 To spin up Vortex Gym locally, you must provide your personalized secrets securely. Navigate to the central config file:
@@ -128,7 +128,7 @@ npm run dev
 
 ---
 
-## 🗄️ Database Design Strategy
+## Database Design Strategy
 The relational integrity of the system maps across 18 specialized tables, utilizing UUID primary keys, high-level foreign boundary constraints, and cascading rules preventing orphan data fragmentation.
 
 ![Vortex Gym ER Diagram](Extras/ER_D.png)
